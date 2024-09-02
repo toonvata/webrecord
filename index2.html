@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบบันทึกประวัติผู้ป่วยและการรักษา</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --secondary-color: #f5a623;
+            --background-color: #f0f4f8;
+            --text-color: #333;
+            --border-color: #e0e0e0;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--background-color);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1, h2, h3 {
+            color: var(--primary-color);
+        }
+        .grid-container {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #3a7bd5;
+        }
+        .visit-record {
+            background-color: #f9f9f9;
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+        .search-results {
+            position: absolute;
+            background-color: white;
+            border: 1px solid var(--border-color);
+            max-height: 200px;
+            overflow-y: auto;
+            width: calc(100% - 40px);
+            z-index: 1000;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .search-result-item {
+            padding: 10px;
+            cursor: pointer;
+        }
+        .search-result-item:hover {
+            background-color: #f0f0f0;
+        }
+        .vital-signs {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        #bodyChartContainer {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        #bodyChart {
+            width: 100%;
+            height: auto;
+        }
+        #drawLayer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ระบบบันทึกประวัติผู้ป่วยและการรักษา</h1>
+        
+        <div class="grid-container">
+            <div id="visitHistory">
+                <h2>ประวัติการรักษา</h2>
+                <div id="visitRecords"></div>
+            </div>
+            
+            <div id="treatmentRecord">
+                <h2>บันทึกการรักษา</h2>
+                <form id="treatmentForm">
+                    <div class="form-group">
+                        <label for="patientSearch">ค้นหาผู้ป่วย (ชื่อ หรือ HN):</label>
+                        <input type="text" id="patientSearch" autocomplete="off">
+                        <div id="searchResults" class="search-results"></div>
+                    </div>
+                    
+                    <div id="selectedPatientInfo"></div>
+                    
+                    <h3>Vital Signs</h3>
+                    <div class="vital-signs">
+                        <div class="form-group">
+                            <label for="bp">BP (mmHg):</label>
+                            <input type="text" id="bp" placeholder="เช่น 120/80">
+                        </div>
+                        <div class="form-group">
+                            <label for="hr">HR (bpm):</label>
+                            <input type="number" id="hr">
+                        </div>
+                        <div class="form-group">
+                            <label for="bt">BT (°C):</label>
+                            <input type="number" id="bt" step="0.1">
+                        </div>
+                        <div class="form-group">
+                            <label for="rr">RR (bpm):</label>
+                            <input type="number" id="rr">
+                        </div>
+                    </div>
+
+                    <h3>Body Chart</h3>
+                    <div id="bodyChartContainer">
+                        <svg id="bodyChart" viewBox="0 0 200 400">
+                            <!-- Front view -->
+                            <path d="M100,30 a20,20 0 1,1 0,0.1 v20 M80,70 h40 M60,100 h80 M90,150 v50 M110,150 v50" fill="none" stroke="#000" stroke-width="2"/>
+                            <!-- Back view -->
+                            <path d="M100,230 a20,20 0 1,1 0,0.1 v20 M80,270 h40 M60,300 h80 M90,350 v50 M110,350 v50" fill="none" stroke="#000" stroke-width="2"/>
+                        </svg>
+                        <svg id="drawLayer" viewBox="0 0 200 400"></svg>
+                    </div>
+                    <button type="button" onclick="clearBodyChart()">ล้าง Body Chart</button>
+
+                    <div class="form-group">
+                        <label for="visitDate">วันที่รักษา:</label>
+                        <input type="date" id="visitDate" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="symptoms">อาการ:</label>
+                        <textarea id="symptoms" rows="3" required></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="diagnosis">การวินิจฉัย:</label>
+                        <textarea id="diagnosis" rows="3" required></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="treatment">การรักษา:</label>
+                        <textarea id="treatment" rows="3" required></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="medication">ยาที่ได้รับ:</label>
+                        <input type="text" id="medication">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="nextAppointment">วันนัดครั้งต่อไป:</label>
+                        <input type="date" id="nextAppointment">
+                    </div>
+                    
+                    <button type="submit">บันทึกการรักษา</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let patients = JSON.parse(localStorage.getItem('patients')) || [];
+        let currentHN = parseInt(localStorage.getItem('currentHN') || '0');
+
+        const visitRecords = document.getElementById('visitRecords');
+        const selectedPatientInfo = document.getElementById('selectedPatientInfo');
+        const searchResults = document.getElementById('searchResults');
+        const bodyChart = document.getElementById('bodyChart');
+        const drawLayer = document.getElementById('drawLayer');
+        const patientSearch = document.getElementById('patientSearch');
+
+        let isDrawing = false;
+        let currentPath;
+
+        function savePatients() {
+            localStorage.setItem('patients', JSON.stringify(patients));
+            localStorage.setItem('currentHN', currentHN.toString());
+        }
+
+        function generateHN() {
+            currentHN++;
+            return 'HN' + currentHN.toString().padStart(6, '0');
+        }
+
+        patientSearch.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const filteredPatients = patients.filter(patient => 
+                patient.name.toLowerCase().includes(searchTerm) || 
+                patient.hn.toLowerCase().includes(searchTerm)
+            );
+            
+            displaySearchResults(filteredPatients);
+        });
+
+        function displaySearchResults(results) {
+            searchResults.innerHTML = '';
+            results.forEach(patient => {
+                const div = document.createElement('div');
+                div.className = 'search-result-item';
+                div.textContent = `${patient.name} (HN: ${patient.hn})`;
+                div.addEventListener('click', () => selectPatient(patient));
+                searchResults.appendChild(div);
+            });
+            
+            searchResults.style.display = results.length ? 'block' : 'none';
+        }
+
+        function selectPatient(patient) {
+            patientSearch.value = `${patient.name} (HN: ${patient.hn})`;
+            patientSearch.setAttribute('data-hn', patient.hn);
+            searchResults.style.display = 'none';
+            
+            selectedPatientInfo.innerHTML = `
+                <div class="patient-info">
+                    <h3>ข้อมูลผู้ป่วย</h3>
+                    <p><strong>HN:</strong> ${patient.hn}</p>
+                    <p><strong>ชื่อ-นามสกุล:</strong> ${patient.name}</p>
+                    <p><strong>วันเกิด:</strong> ${patient.dateOfBirth} <strong>อายุ:</strong> ${patient.age}</p>
+                    <p><strong>อาชีพ:</strong> ${patient.occupation}</p>
+                    <p><strong>ที่อยู่:</strong> ${patient.address}</p>
+                    <p><strong>เบอร์โทรศัพท์:</strong> ${patient.phoneNumber}</p>
+                    <p><strong>โรคประจำตัว:</strong> ${patient.underlyingDisease}</p>
+                    <p><strong>ประวัติการแพ้ยา:</strong> ${patient.drugAllergy}</p>
+                </div>
+            `;
+            updateVisitHistory(patient);
+        }
+
+        document.getElementById('treatmentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const patientHN = patientSearch.getAttribute('data-hn');
+            const visitDate = document.getElementById('visitDate').value;
+            const symptoms = document.getElementById('symptoms').value;
+            const diagnosis = document.getElementById('diagnosis').value;
+            const treatment = document.getElementById('treatment').value;
+            const medication = document.getElementById('medication').value;
+            const nextAppointment = document.getElementById('nextAppointment').value;
+            const bp = document.getElementById('bp').value;
+            const hr = document.getElementById('hr').value;
+            const bt = document.getElementById('bt').value;
+            const rr = document.getElementById('rr').value;
+            const bodyChartData = drawLayer.innerHTML;
+            
+            const newVisit = {
+                date: visitDate,
+                symptoms: symptoms,
+                diagnosis: diagnosis,
+                treatment: treatment,
+                medication: medication,
+                nextAppointment: nextAppointment,
+                vitalSigns: { bp, hr, bt, rr },
+                bodyChart: bodyChartData
+            };
+            
+            const patient = patients.find(p => p.hn === patientHN);
+            if (patient) {
+                if (!patient.visits) {
+                    patient.visits = [];
+                }
+                patient.visits.unshift(newVisit);
+                savePatients();
+                updateVisitHistory(patient);
+            }
+            
+            this.reset();
+            patientSearch.value = '';
+            patientSearch.removeAttribute('data-hn');
+            selectedPatientInfo.innerHTML = '';
+            clearBodyChart();
+            
+            console.log('บันทึกการรักษา:', newVisit);
+        });
+
+       function updateVisitHistory(patient) {
+            visitRecords.innerHTML = '';
+            if (patient.visits && patient.visits.length > 0) {
+                patient.visits.forEach((visit, index) => {
+                    const visitRecord = document.createElement('div');
+                    visitRecord.className = 'visit-record';
+                    visitRecord.innerHTML = `
+                        <h4>การรักษาครั้งที่ ${index + 1} - วันที่: ${visit.date}</h4>
+                        <p><strong>Vital Signs:</strong> BP: ${visit.vitalSigns?.bp || 'N/A'}, HR: ${visit.vitalSigns?.hr || 'N/A'}, BT: ${visit.vitalSigns?.bt || 'N/A'}, RR: ${visit.vitalSigns?.rr || 'N/A'}</p>
+                        <p><strong>อาการ:</strong> ${visit.symptoms}</p>
+                        <p><strong>การวินิจฉัย:</strong> ${visit.diagnosis}</p>
+                        <button onclick="showFullVisitDetails('${patient.hn}', ${index})">ดูรายละเอียดเพิ่มเติม</button>
+                    `;
+                    visitRecords.appendChild(visitRecord);
+                });
+            } else {
+                visitRecords.innerHTML = '<p>ไม่มีประวัติการรักษา</p>';
+            }
+        }
+
+        function showFullVisitDetails(hn, visitIndex) {
+            const patient = patients.find(p => p.hn === hn);
+            if (patient && patient.visits[visitIndex]) {
+                const visit = patient.visits[visitIndex];
+                const bodyChartWindow = window.open("", "Body Chart", "width=400,height=600");
+                bodyChartWindow.document.write(`
+                    <h2>Body Chart</h2>
+                    <svg viewBox="0 0 200 400" width="400" height="600">
+                        ${visit.bodyChart}
+                    </svg>
+                `);
+                
+                alert(`รายละเอียดการรักษา:
+                วันที่: ${visit.date}
+                Vital Signs:
+                - BP: ${visit.vitalSigns?.bp || 'N/A'}
+                - HR: ${visit.vitalSigns?.hr || 'N/A'}
+                - BT: ${visit.vitalSigns?.bt || 'N/A'}
+                - RR: ${visit.vitalSigns?.rr || 'N/A'}
+                อาการ: ${visit.symptoms}
+                การวินิจฉัย: ${visit.diagnosis}
+                การรักษา: ${visit.treatment}
+                ยาที่ได้รับ: ${visit.medication}
+                วันนัดครั้งต่อไป: ${visit.nextAppointment}`);
+            }
+        }
+
+        // Body Chart functions
+        drawLayer.addEventListener('mousedown', startDrawing);
+        drawLayer.addEventListener('mousemove', draw);
+        drawLayer.addEventListener('mouseup', stopDrawing);
+        drawLayer.addEventListener('mouseleave', stopDrawing);
+
+        function startDrawing(e) {
+            isDrawing = true;
+            const point = getMousePosition(e);
+            currentPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            currentPath.setAttribute("d", `M${point.x},${point.y}`);
+            currentPath.setAttribute("fill", "none");
+            currentPath.setAttribute("stroke", "red");
+            currentPath.setAttribute("stroke-width", "2");
+            drawLayer.appendChild(currentPath);
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            const point = getMousePosition(e);
+            const d = currentPath.getAttribute("d");
+            currentPath.setAttribute("d", d + ` L${point.x},${point.y}`);
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        function getMousePosition(e) {
+            const rect = drawLayer.getBoundingClientRect();
+            const scaleX = drawLayer.viewBox.baseVal.width / rect.width;
+            const scaleY = drawLayer.viewBox.baseVal.height / rect.height;
+            return {
+                x: (e.clientX - rect.left) * scaleX,
+                y: (e.clientY - rect.top) * scaleY
+            };
+        }
+
+        function clearBodyChart() {
+            drawLayer.innerHTML = '';
+        }
+
+        // โหลดข้อมูลตัวอย่างเมื่อเริ่มต้นใช้งาน (สำหรับการทดสอบ)
+        if (patients.length === 0) {
+            patients = [
+                { 
+                    hn: "HN000001", 
+                    name: "สมชาย ใจดี", 
+                    dateOfBirth: "1990-05-15", 
+                    age: 34, 
+                    occupation: "วิศวกร", 
+                    address: "123 ถ.สุขุมวิท กรุงเทพฯ", 
+                    phoneNumber: "0812345678", 
+                    underlyingDisease: "ความดันโลหิตสูง", 
+                    drugAllergy: "ไม่มี",
+                    visits: [
+                        {
+                            date: "2024-05-01",
+                            symptoms: "ปวดหัว มีไข้",
+                            diagnosis: "ไข้หวัดใหญ่",
+                            treatment: "ให้ยาลดไข้และยาแก้ปวด",
+                            medication: "พาราเซตามอล, ไอบูโพรเฟน",
+                            nextAppointment: "2024-05-08",
+                            vitalSigns: { bp: "120/80", hr: "72", bt: "37.5", rr: "16" },
+                            bodyChart: ""
+                        }
+                    ]
+                }
+            ];
+            currentHN = 1;
+            savePatients();
+        }
+    </script>
+</body>
+</html>
