@@ -6,13 +6,29 @@
     <title>ระบบบันทึกประวัติผู้ป่วยและการรักษา</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; }
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 0; padding: 0; }
         .container { max-width: 800px; margin: 0 auto; padding: 20px; }
         .tab { overflow: hidden; border: 1px solid #ccc; background-color: #f1f1f1; }
-        .tab button { background-color: inherit; float: left; border: none; outline: none; cursor: pointer; padding: 14px 16px; transition: 0.3s; }
+        .tab button { 
+            background-color: inherit; 
+            float: left; 
+            border: none; 
+            outline: none; 
+            cursor: pointer; 
+            padding: 14px 16px; 
+            transition: 0.3s; 
+            font-size: 17px;
+        }
         .tab button:hover { background-color: #ddd; }
         .tab button.active { background-color: #ccc; }
-        .tabcontent { display: none; padding: 20px; border: 1px solid #ccc; border-top: none; }
+        .tabcontent { 
+            display: none; 
+            padding: 20px; 
+            border: 1px solid #ccc; 
+            border-top: none; 
+        }
+        #PatientInfo { background-color: white; }
+        #TreatmentRecord { background-color: #00008B; color: white; }
         #canvas-container { width: 302px; height: 320px; position: relative; margin: 20px 0; }
         #bodyChart { position: absolute; top: 0; left: 0; }
         #patientInfo, #selectedPatientInfo { font-size: 0.9em; border: 1px solid #ccc; padding: 15px; margin-top: 15px; background-color: #f9f9f9; }
@@ -20,10 +36,23 @@
         .vital-signs { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
         .vital-sign { flex: 1 1 calc(25% - 10px); min-width: 150px; }
         .treatment-history { margin-top: 30px; }
-        .treatment-entry { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; background-color: #fff; }
-        input[type="text"], input[type="date"], input[type="tel"], input[type="number"], textarea { width: 100%; padding: 8px; margin: 5px 0 15px; display: inline-block; border: 1px solid #ccc; box-sizing: border-box; }
+        .treatment-entry { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; background-color: #fff; color: black; }
+        input[type="text"], input[type="date"], input[type="tel"], input[type="number"], textarea { 
+            width: 100%; 
+            padding: 8px; 
+            margin: 5px 0 15px; 
+            display: inline-block; 
+            border: 1px solid #ccc; 
+            box-sizing: border-box; 
+        }
         button { background-color: #4CAF50; color: white; padding: 10px 15px; border: none; cursor: pointer; }
         button:hover { opacity: 0.8; }
+        #TreatmentRecord input[type="text"], #TreatmentRecord input[type="date"], 
+        #TreatmentRecord input[type="tel"], #TreatmentRecord input[type="number"], 
+        #TreatmentRecord textarea {
+            background-color: #f0f0f0;
+            color: black;
+        }
     </style>
 </head>
 <body>
@@ -116,7 +145,7 @@
                 <input type="date" id="nextAppointment">
 
                 <div id="canvas-container">
-                    <img src="/api/placeholder/302/320" alt="Body Chart" id="bodyChartImage" />
+                    <img src="https://toonvata.github.io/webrecord/body.jpg" alt="Body Chart" id="bodyChartImage" />
                     <canvas id="bodyChart"></canvas>
                 </div>
                 <button type="button" onclick="clearCanvas()">ล้างรูปวาด</button>
@@ -160,14 +189,14 @@
                 width: 302,
                 height: 320
             });
-            canvas.setBackgroundImage('/api/placeholder/302/320', canvas.renderAll.bind(canvas));
+            canvas.setBackgroundImage('https://toonvata.github.io/webrecord/body.jpg', canvas.renderAll.bind(canvas));
             canvas.freeDrawingBrush.width = 2;
             canvas.freeDrawingBrush.color = "#FF0000";
         }
 
         function clearCanvas() {
             canvas.clear();
-            canvas.setBackgroundImage('/api/placeholder/302/320', canvas.renderAll.bind(canvas));
+            canvas.setBackgroundImage('https://toonvata.github.io/webrecord/body.jpg', canvas.renderAll.bind(canvas));
         }
 
         function generateHN() {
@@ -252,7 +281,7 @@
             }
         }
 
-       document.getElementById('patientForm').addEventListener('submit', function(e) {
+         document.getElementById('patientForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const hn = generateHN();
             const name = document.getElementById('name').value;
@@ -269,6 +298,7 @@
             this.reset();
             document.getElementById('hn').value = generateHN();
             alert('บันทึกข้อมูลผู้ป่วยเรียบร้อยแล้ว');
+            saveData();
         });
 
         document.getElementById('patientSearch').addEventListener('input', function(e) {
@@ -319,21 +349,9 @@
             selectedPatient = null;
             document.getElementById('patientSearch').value = '';
             alert('บันทึกการรักษาเรียบร้อยแล้ว');
+            saveData();
         });
 
-        function addSampleData() {
-            addPatient({ hn: generateHN(), name: "สมชาย ใจดี", birthdate: "1980-05-15", occupation: "วิศวกร", address: "123 ถ.สุขุมวิท กรุงเทพฯ", phone: "0812345678", conditions: "โรคภูมิแพ้", allergies: "ยาเพนนิซิลิน" });
-            addPatient({ hn: generateHN(), name: "สมหญิง รักสวย", birthdate: "1992-11-30", occupation: "นักการตลาด", address: "456 ถ.พหลโยธิน กรุงเทพฯ", phone: "0898765432", conditions: "โรคหอบหืด", allergies: "ไม่มี" });
-            addPatient({ hn: generateHN(), name: "สมศักดิ์ เก่งกาจ", birthdate: "1975-08-22", occupation: "ครู", address: "789 ถ.รัชดาภิเษก กรุงเทพฯ", phone: "0856789012", conditions: "โรคเบาหวาน", allergies: "ยาซัลฟา" });
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('hn').value = generateHN();
-            addSampleData();
-            openTab({ currentTarget: document.querySelector('.tablinks') }, 'PatientInfo');
-        });
-
-        // เพิ่มฟังก์ชันสำหรับการบันทึกและโหลดข้อมูล (สมมติว่าใช้ Local Storage)
         function saveData() {
             localStorage.setItem('patients', JSON.stringify(patients));
             localStorage.setItem('treatments', JSON.stringify(treatments));
@@ -352,20 +370,31 @@
             updatePatientList();
         }
 
-        // เรียกใช้ loadData เมื่อโหลดหน้าเว็บ
+        function addSampleData() {
+            addPatient({ hn: generateHN(), name: "สมชาย ใจดี", birthdate: "1980-05-15", occupation: "วิศวกร", address: "123 ถ.สุขุมวิท กรุงเทพฯ", phone: "0812345678", conditions: "โรคภูมิแพ้", allergies: "ยาเพนนิซิลิน" });
+            addPatient({ hn: generateHN(), name: "สมหญิง รักสวย", birthdate: "1992-11-30", occupation: "นักการตลาด", address: "456 ถ.พหลโยธิน กรุงเทพฯ", phone: "0898765432", conditions: "โรคหอบหืด", allergies: "ไม่มี" });
+            addPatient({ hn: generateHN(), name: "สมศักดิ์ เก่งกาจ", birthdate: "1975-08-22", occupation: "ครู", address: "789 ถ.รัชดาภิเษก กรุงเทพฯ", phone: "0856789012", conditions: "โรคเบาหวาน", allergies: "ยาซัลฟา" });
+            saveData();
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             loadData();
+            if (patients.length === 0) {
+                addSampleData();
+            }
             document.getElementById('hn').value = generateHN();
-            if (patients.length === 0) addSampleData();
-            openTab({ currentTarget: document.querySelector('.tablinks') }, 'PatientInfo');
+            
+            // เปิด tab แรกโดยอัตโนมัติ
+            document.querySelector('.tablinks').click();
         });
 
-        // บันทึกข้อมูลทุกครั้งที่มีการเปลี่ยนแปลง
-        ['patientForm', 'treatmentForm'].forEach(formId => {
-            document.getElementById(formId).addEventListener('submit', function() {
-                setTimeout(saveData, 0);
+        // เพิ่มการเรียกใช้ฟังก์ชัน openTab เมื่อคลิกที่ปุ่ม tab
+        document.querySelectorAll('.tablinks').forEach(button => {
+            button.addEventListener('click', function(event) {
+                openTab(event, this.textContent === 'ข้อมูลผู้ป่วย' ? 'PatientInfo' : 'TreatmentRecord');
             });
         });
+
     </script>
 </body>
 </html>
