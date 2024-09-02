@@ -99,7 +99,8 @@
 
     <script>
         let canvas;
-        let currentHN = 1000;
+        let currentHN = 1;
+        let patients = [];
 
         function openTab(evt, tabName) {
             var i, tabcontent, tablinks;
@@ -135,11 +136,42 @@
             canvas.setBackgroundImage('/api/placeholder/302/320', canvas.renderAll.bind(canvas));
         }
 
+        function generateHN() {
+            return String(currentHN++).padStart(5, '0');
+        }
+
+        function addPatient(patient) {
+            patients.push(patient);
+            updatePatientList();
+        }
+
+        function updatePatientList() {
+            const patientList = document.getElementById('patientList');
+            patientList.innerHTML = '';
+            patients.forEach(patient => {
+                const li = document.createElement('li');
+                li.textContent = `${patient.hn}: ${patient.name}`;
+                patientList.appendChild(li);
+            });
+        }
+
         document.getElementById('patientForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            currentHN++;
-            document.getElementById('hn').value = 'HN' + currentHN;
-            // Add logic to save patient data
+            const hn = generateHN();
+            const name = document.getElementById('name').value;
+            const birthdate = document.getElementById('birthdate').value;
+            const occupation = document.getElementById('occupation').value;
+            const address = document.getElementById('address').value;
+            const phone = document.getElementById('phone').value;
+            const conditions = document.getElementById('conditions').value;
+            const allergies = document.getElementById('allergies').value;
+
+            const patient = { hn, name, birthdate, occupation, address, phone, conditions, allergies };
+            addPatient(patient);
+
+            // Clear form
+            this.reset();
+            document.getElementById('hn').value = generateHN();
         });
 
         document.getElementById('treatmentForm').addEventListener('submit', function(e) {
@@ -148,7 +180,12 @@
         });
 
         document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('hn').value = 'HN' + currentHN;
+            document.getElementById('hn').value = generateHN();
+
+            // Add sample patients
+            addPatient({ hn: generateHN(), name: "สมชาย ใจดี", birthdate: "1980-05-15", occupation: "วิศวกร", address: "123 ถ.สุขุมวิท กรุงเทพฯ", phone: "0812345678", conditions: "โรคภูมิแพ้", allergies: "ยาเพนนิซิลิน" });
+            addPatient({ hn: generateHN(), name: "สมหญิง รักสวย", birthdate: "1992-11-30", occupation: "นักการตลาด", address: "456 ถ.พหลโยธิน กรุงเทพฯ", phone: "0898765432", conditions: "โรคหอบหืด", allergies: "ไม่มี" });
+            addPatient({ hn: generateHN(), name: "สมศักดิ์ เก่งกาจ", birthdate: "1975-08-22", occupation: "ครู", address: "789 ถ.รัชดาภิเษก กรุงเทพฯ", phone: "0856789012", conditions: "โรคเบาหวาน", allergies: "ยาซัลฟา" });
         });
     </script>
 </body>
