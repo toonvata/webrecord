@@ -7,13 +7,13 @@
     <style>
         body {
             font-family: 'Sarabun', sans-serif;
-            line-height: 1.6;
+            line-height: 1.4;
             margin: 0;
             padding: 20px;
             background-color: #f0f0f0;
         }
         .container {
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto;
             background-color: #ffffff;
             padding: 20px;
@@ -88,13 +88,18 @@
         .patient-info {
             background-color: #e9f7ef;
             border: 1px solid #28a745;
-            padding: 15px;
+            padding: 10px;
             border-radius: 5px;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
+            font-size: 0.9em;
         }
         .patient-info h3 {
             color: #28a745;
             margin-top: 0;
+            font-size: 1.1em;
+        }
+        .patient-info p {
+            margin: 5px 0;
         }
         .search-results {
             position: absolute;
@@ -112,11 +117,19 @@
         .search-result-item:hover {
             background-color: #f0f0f0;
         }
-    </style>
-</head>
-<body>
-    
-    <div class="container">
+        .vital-signs {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .vital-signs input {
+            width: 100%;
+        }
+        #bodyChart {
+            border: 1px solid #000;
+            cursor: crosshair;
+        }
     </style>
 </head>
 <body>
@@ -168,7 +181,7 @@
             </div>
         </div>
 
-         <div id="TreatmentRecord" class="tabcontent">
+        <div id="TreatmentRecord" class="tabcontent">
             <h2>บันทึกการรักษา</h2>
             <form id="treatmentForm">
                 <label for="patientSearch">ค้นหาผู้ป่วย (ชื่อ หรือ HN):</label>
@@ -177,6 +190,30 @@
                 
                 <div id="selectedPatientInfo"></div>
                 
+                <h3>Vital Signs</h3>
+                <div class="vital-signs">
+                    <div>
+                        <label for="bp">BP (mmHg):</label>
+                        <input type="text" id="bp" placeholder="เช่น 120/80">
+                    </div>
+                    <div>
+                        <label for="hr">HR (bpm):</label>
+                        <input type="number" id="hr">
+                    </div>
+                    <div>
+                        <label for="bt">BT (°C):</label>
+                        <input type="number" id="bt" step="0.1">
+                    </div>
+                    <div>
+                        <label for="rr">RR (bpm):</label>
+                        <input type="number" id="rr">
+                    </div>
+                </div>
+
+                <h3>Body Chart</h3>
+                <canvas id="bodyChart" width="200" height="400"></canvas>
+                <button type="button" onclick="clearBodyChart()">ล้าง Body Chart</button>
+
                 <label for="visitDate">วันที่รักษา:</label>
                 <input type="date" id="visitDate" required>
                 
@@ -198,14 +235,12 @@
                 <button type="submit">บันทึกการรักษา</button>
             </form>
             
-           </form>
-            
             <div id="visitHistory">
                 <h3>ประวัติการรักษา</h3>
                 <div id="visitRecords"></div>
             </div>
         </div>
-
+        
         <div id="Search" class="tabcontent">
             <h2>ค้นหาผู้ป่วย</h2>
             <div id="searchHN">
@@ -217,7 +252,7 @@
         </div>
     </div>
 
-    <script>
+   <script>
         let patients = JSON.parse(localStorage.getItem('patients')) || [];
         let currentHN = parseInt(localStorage.getItem('currentHN') || '0');
 
@@ -225,6 +260,10 @@
         const patientsList = document.getElementById('patients');
         const selectedPatientInfo = document.getElementById('selectedPatientInfo');
         const searchResults = document.getElementById('searchResults');
+        const bodyChart = document.getElementById('bodyChart');
+        const ctx = bodyChart.getContext('2d');
+
+        let isDrawing = false;
 
         function savePatients() {
             localStorage.setItem('patients', JSON.stringify(patients));
@@ -246,6 +285,7 @@
         }
 
         updatePatientList();
+
 
         document.getElementById('patientInfoForm').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -272,7 +312,7 @@
             console.log('บันทึกข้อมูลผู้ป่วยใหม่:', newPatient);
         });
 
-        document.getElementById('treatmentForm').addEventListener('submit', function(e) {
+      document.getElementById('treatmentForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
             const patientHN = document.getElementById('patientSearch').getAttribute('data-hn');
@@ -282,6 +322,11 @@
             const treatment = document.getElementById('treatment').value;
             const medication = document.getElementById('medication').value;
             const nextAppointment = document.getElementById('nextAppointment').value;
+            const bp = document.getElementById('bp').value;
+            const hr = document.getElementById('hr').value;
+            const bt = document.getElementById('bt').value;
+            const rr = document.getElementById('rr').value;
+            const bodyChartImage = bodyChart.toDataURL();
             
             const newVisit = {
                 date: visitDate,
@@ -289,7 +334,9 @@
                 diagnosis: diagnosis,
                 treatment: treatment,
                 medication: medication,
-                nextAppointment: nextAppointment
+                nextAppointment: nextAppointment,
+                vitalSigns: { bp, hr, bt, rr },
+                bodyChart: bodyChartImage
             };
             
             const patient = patients.find(p => p.hn === patientHN);
@@ -303,32 +350,10 @@
             document.getElementById('patientSearch').value = '';
             document.getElementById('patientSearch').removeAttribute('data-hn');
             selectedPatientInfo.innerHTML = '';
+            clearBodyChart();
             
             console.log('บันทึกการรักษา:', newVisit);
         });
-
-        document.getElementById('patientSearch').addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase();
-            const filteredPatients = patients.filter(patient => 
-                patient.name.toLowerCase().includes(searchTerm) || 
-                patient.hn.toLowerCase().includes(searchTerm)
-            );
-            
-            displaySearchResults(filteredPatients);
-        });
-
-        function displaySearchResults(results) {
-            searchResults.innerHTML = '';
-            results.forEach(patient => {
-                const div = document.createElement('div');
-                div.className = 'search-result-item';
-                div.textContent = `${patient.name} (HN: ${patient.hn})`;
-                div.addEventListener('click', () => selectPatient(patient));
-                searchResults.appendChild(div);
-            });
-            
-            searchResults.style.display = results.length ? 'block' : 'none';
-        }
 
         function selectPatient(patient) {
             const patientSearch = document.getElementById('patientSearch');
@@ -341,8 +366,7 @@
                     <h3>ข้อมูลผู้ป่วย</h3>
                     <p><strong>HN:</strong> ${patient.hn}</p>
                     <p><strong>ชื่อ-นามสกุล:</strong> ${patient.name}</p>
-                    <p><strong>วันเกิด:</strong> ${patient.dateOfBirth}</p>
-                    <p><strong>อายุ:</strong> ${patient.age}</p>
+                    <p><strong>วันเกิด:</strong> ${patient.dateOfBirth} <strong>อายุ:</strong> ${patient.age}</p>
                     <p><strong>อาชีพ:</strong> ${patient.occupation}</p>
                     <p><strong>ที่อยู่:</strong> ${patient.address}</p>
                     <p><strong>เบอร์โทรศัพท์:</strong> ${patient.phoneNumber}</p>
@@ -361,6 +385,7 @@
                     visitRecord.className = 'visit-record';
                     visitRecord.innerHTML = `
                         <h4>การรักษาครั้งที่ ${index + 1} - วันที่: ${visit.date}</h4>
+                        <p><strong>Vital Signs:</strong> BP: ${visit.vitalSigns?.bp || 'N/A'}, HR: ${visit.vitalSigns?.hr || 'N/A'}, BT: ${visit.vitalSigns?.bt || 'N/A'}, RR: ${visit.vitalSigns?.rr || 'N/A'}</p>
                         <p><strong>อาการ:</strong> ${visit.symptoms}</p>
                         <p><strong>การวินิจฉัย:</strong> ${visit.diagnosis}</p>
                         <button onclick="showFullVisitDetails('${patient.hn}', ${index})">ดูรายละเอียดเพิ่มเติม</button>
@@ -371,6 +396,7 @@
                 visitRecords.innerHTML = '<p>ไม่มีประวัติการรักษา</p>';
             }
         }
+
 
         function showFullVisitDetails(hn, visitIndex) {
             const patient = patients.find(p => p.hn === hn);
@@ -386,6 +412,83 @@
             }
         }
 
+       function showFullVisitDetails(hn, visitIndex) {
+            const patient = patients.find(p => p.hn === hn);
+            if (patient && patient.visits[visitIndex]) {
+                const visit = patient.visits[visitIndex];
+                const bodyChartWindow = window.open("", "Body Chart", "width=220,height=420");
+                bodyChartWindow.document.write(`<img src="${visit.bodyChart}" width="200" height="400"/>`);
+                
+                alert(`รายละเอียดการรักษา:
+                วันที่: ${visit.date}
+                Vital Signs:
+                - BP: ${visit.vitalSigns?.bp || 'N/A'}
+                - HR: ${visit.vitalSigns?.hr || 'N/A'}
+                - BT: ${visit.vitalSigns?.bt || 'N/A'}
+                - RR: ${visit.vitalSigns?.rr || 'N/A'}
+                อาการ: ${visit.symptoms}
+                การวินิจฉัย: ${visit.diagnosis}
+                การรักษา: ${visit.treatment}
+                ยาที่ได้รับ: ${visit.medication}
+                วันนัดครั้งต่อไป: ${visit.nextAppointment}`);
+            }
+        }
+
+        // Body Chart functions
+        bodyChart.addEventListener('mousedown', startDrawing);
+        bodyChart.addEventListener('mousemove', draw);
+        bodyChart.addEventListener('mouseup', stopDrawing);
+        bodyChart.addEventListener('mouseout', stopDrawing);
+
+        function startDrawing(e) {
+            isDrawing = true;
+            draw(e);
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = 'red';
+
+            ctx.lineTo(e.clientX - bodyChart.offsetLeft, e.clientY - bodyChart.offsetTop);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(e.clientX - bodyChart.offsetLeft, e.clientY - bodyChart.offsetTop);
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+            ctx.beginPath();
+        }
+
+        function clearBodyChart() {
+            ctx.clearRect(0, 0, bodyChart.width, bodyChart.height);
+        }
+
+        // เพิ่มรูปร่างคนใน Body Chart
+        function drawBodyOutline() {
+            ctx.beginPath();
+            // Head
+            ctx.arc(100, 30, 20, 0, Math.PI * 2);
+            // Body
+            ctx.moveTo(100, 50);
+            ctx.lineTo(100, 150);
+            // Arms
+            ctx.moveTo(100, 70);
+            ctx.lineTo(70, 100);
+            ctx.moveTo(100, 70);
+            ctx.lineTo(130, 100);
+            // Legs
+            ctx.moveTo(100, 150);
+            ctx.lineTo(80, 200);
+            ctx.moveTo(100, 150);
+            ctx.lineTo(120, 200);
+            ctx.stroke();
+        }
+
+        // วาดรูปร่างคนเมื่อโหลดหน้า
+        drawBodyOutline();
         function searchPatient() {
             const searchHN = document.getElementById('searchHNInput').value;
             const searchResult = document.getElementById('searchResult');
