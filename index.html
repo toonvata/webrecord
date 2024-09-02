@@ -13,7 +13,7 @@
             --border-color: #e0e0e0;
         }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Sarabun', sans-serif;
             line-height: 1.6;
             color: var(--text-color);
             background-color: var(--background-color);
@@ -91,21 +91,12 @@
             margin-bottom: 15px;
         }
         #bodyChartContainer {
-            position: relative;
-            width: 100%;
-            max-width: 400px;
-            margin: 0 auto;
+            margin-bottom: 15px;
         }
-        #bodyChart {
-            width: 100%;
+        #bodyChartPreview {
+            max-width: 100%;
             height: auto;
-        }
-        #drawLayer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            margin-top: 10px;
         }
         .tab {
             overflow: hidden;
@@ -227,12 +218,11 @@
                     </div>
                 </div>
 
-               <h3>Body Chart</h3>
+                <h3>Body Chart</h3>
                 <div id="bodyChartContainer">
                     <input type="file" id="bodyChartUpload" accept="image/*">
-                    <img id="bodyChartPreview" src="#" alt="Body Chart Preview" style="max-width: 100%; display: none;">
+                    <img id="bodyChartPreview" src="#" alt="Body Chart Preview" style="display: none;">
                 </div>
-                <button type="button" onclick="clearBodyChart()">ล้าง Body Chart</button>
 
                 <div class="form-group">
                     <label for="visitDate">วันที่รักษา:</label>
@@ -282,12 +272,7 @@
         const patientsList = document.getElementById('patients');
         const selectedPatientInfo = document.getElementById('selectedPatientInfo');
         const searchResults = document.getElementById('searchResults');
-        const bodyChart = document.getElementById('bodyChart');
-        const drawLayer = document.getElementById('drawLayer');
         const patientSearch = document.getElementById('patientSearch');
-
-        let isDrawing = false;
-        let currentPath;
 
         function savePatients() {
             localStorage.setItem('patients', JSON.stringify(patients));
@@ -330,7 +315,7 @@
             
             this.reset();
             
-            console.log('บันทึกข้อมูลผู้ป่วยใหม่:', newPatient);
+            alert('บันทึกข้อมูลผู้ป่วยใหม่สำเร็จ');
         });
 
         patientSearch.addEventListener('input', function() {
@@ -351,7 +336,7 @@
                 div.textContent = `${patient.name} (HN: ${patient.hn})`;
                 div.addEventListener('click', () => selectPatient(patient));
                 searchResults.appendChild(div);
-                });
+            });
             
             searchResults.style.display = results.length ? 'block' : 'none';
         }
@@ -369,7 +354,8 @@
                     <p><strong>วันเกิด:</strong> ${patient.dateOfBirth} <strong>อายุ:</strong> ${patient.age}</p>
                     <p><strong>อาชีพ:</strong> ${patient.occupation}</p>
                     <p><strong>ที่อยู่:</strong> ${patient.address}</p>
-                    <p><strong>เบอร์โทรศัพท์:</strong> ${patient.phoneNumber}</p>
+                    <p><strong>เบอร์โทรศัพท์:</strong> ${patient.phone
+                                                      <p><strong>เบอร์โทรศัพท์:</strong> ${patient.phoneNumber}</p>
                     <p><strong>โรคประจำตัว:</strong> ${patient.underlyingDisease}</p>
                     <p><strong>ประวัติการแพ้ยา:</strong> ${patient.drugAllergy}</p>
                 </div>
@@ -391,7 +377,7 @@
             const hr = document.getElementById('hr').value;
             const bt = document.getElementById('bt').value;
             const rr = document.getElementById('rr').value;
-            const bodyChartImage = document.getElementById('bodyChartUpload').files[0];
+            const bodyChartFile = document.getElementById('bodyChartUpload').files[0];
             
             const newVisit = {
                 date: visitDate,
@@ -404,47 +390,33 @@
                 bodyChart: null
             };
 
-            if (bodyChartImage) {
+            if (bodyChartFile) {
                 const reader = new FileReader();
                 reader.onloadend = function() {
                     newVisit.bodyChart = reader.result;
                     saveVisit(patientHN, newVisit);
                 }
-                reader.readAsDataURL(bodyChartImage);
+                reader.readAsDataURL(bodyChartFile);
             } else {
                 saveVisit(patientHN, newVisit);
             }
         });
-          document.getElementById('bodyChartUpload').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const preview = document.getElementById('bodyChartPreview');
-                preview.src = e.target.result;
-                preview.style.display = 'block';
-            }
-            reader.readAsDataURL(file);
-        }
-    });
-</script>
+
         function saveVisit(patientHN, newVisit) {
             const patient = patients.find(p => p.hn === patientHN);
             if (patient) {
-                if (!patient.visits) {
-                    patient.visits = [];
-                }
                 patient.visits.unshift(newVisit);
                 savePatients();
                 updateVisitHistory(patient);
+                document.getElementById('treatmentForm').reset();
+                patientSearch.value = '';
+                patientSearch.removeAttribute('data-hn');
+                selectedPatientInfo.innerHTML = '';
+                document.getElementById('bodyChartPreview').style.display = 'none';
+                alert('บันทึกการรักษาสำเร็จ');
+            } else {
+                alert('ไม่พบข้อมูลผู้ป่วย กรุณาเลือกผู้ป่วยก่อนบันทึกการรักษา');
             }
-            
-            document.getElementById('treatmentForm').reset();
-            patientSearch.value = '';
-            patientSearch.removeAttribute('data-hn');
-            selectedPatientInfo.innerHTML = '';
-            
-            console.log('บันทึกการรักษา:', newVisit);
         }
 
         function updateVisitHistory(patient) {
@@ -512,22 +484,23 @@
             evt.currentTarget.className += " active";
         }
 
+        document.getElementById('bodyChartUpload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('bodyChartPreview');
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
         // เปิดแท็บ "ข้อมูลผู้ป่วย" เป็นค่าเริ่มต้น
         document.getElementById("defaultOpen").click();
 
         updatePatientList();
-                  document.getElementById('bodyChartUpload').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const preview = document.getElementById('bodyChartPreview');
-                preview.src = e.target.result;
-                preview.style.display = 'block';
-            }
-            reader.readAsDataURL(file);
-        }
-    });
-</script>
+    </script>
 </body>
 </html>
