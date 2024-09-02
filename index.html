@@ -131,21 +131,20 @@
                 <button type="submit">บันทึกข้อมูล</button>
             </form>
             
-           <h2>รายชื่อผู้ป่วย</h2>
-            <input type="text" id="patientSearch" placeholder="ค้นหาผู้ป่วย (ชื่อหรือ HN)">
-            <table id="patientList">
-                <thead>
-                    <tr>
-                        <th>HN</th>
-                        <th>ชื่อ-นามสกุล</th>
-                        <th>วันเกิด</th>
-                        <th>เบอร์โทรศัพท์</th>
-                        <th>การดำเนินการ</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </div>
+           <h2>ประวัติการรักษา</h2>
+        <table id="treatmentHistory">
+            <thead>
+                <tr>
+                    <th>วันที่</th>
+                    <th>อาการ</th>
+                    <th>การวินิจฉัย</th>
+                    <th>การรักษา</th>
+                    <th>การดำเนินการ</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
         
         <div id="treatmentTabContent" class="tab-content">
             <h2>บันทึกการรักษา</h2>
@@ -189,6 +188,12 @@
                 </thead>
                 <tbody></tbody>
             </table>
+        </div>
+    </div>
+    <div id="treatmentDetailModal" style="display: none; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+        <div style="background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 600px;">
+            <span style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;" onclick="closeTreatmentDetailModal()">&times;</span>
+            <div id="treatmentDetailContent"></div>
         </div>
     </div>
 
@@ -318,19 +323,63 @@
             loadTreatmentHistory();
         }
 
-        function loadTreatmentHistory() {
+         function loadTreatmentHistory() {
             if (!selectedPatient) return;
             const tbody = document.querySelector('#treatmentHistory tbody');
             tbody.innerHTML = '';
             treatments
                 .filter(t => t.patientHN === selectedPatient.hn)
+                .sort((a, b) => new Date(b.date) - new Date(a.date))  // เรียงลำดับจากใหม่ไปเก่า
                 .forEach(treatment => {
                     const row = tbody.insertRow();
                     row.insertCell(0).textContent = treatment.date;
                     row.insertCell(1).textContent = treatment.symptoms;
                     row.insertCell(2).textContent = treatment.diagnosis;
                     row.insertCell(3).textContent = treatment.treatment;
+                    const actionsCell = row.insertCell(4);
+                    actionsCell.innerHTML = `
+                        <button onclick="showTreatmentDetail('${treatment.patientHN}', '${treatment.date}')">รายละเอียด</button>
+                        <button onclick="deleteTreatment('${treatment.patientHN}', '${treatment.date}')">ลบ</button>
+                    `;
                 });
+        }
+
+        function showTreatmentDetail(patientHN, treatmentDate) {
+            const treatment = treatments.find(t => t.patientHN === patientHN && t.date === treatmentDate);
+            if (treatment) {
+                const detailContent = `
+                    <h3>รายละเอียดการรักษา</h3>
+                    <p><strong>วันที่:</strong> ${treatment.date}</p>
+                    <p><strong>Vital Signs:</strong></p>
+                    <ul>
+                        <li>ความดันโลหิต: ${treatment.vitalSigns.bloodPressure}</li>
+                        <li>ชีพจร: ${treatment.vitalSigns.pulse}</li>
+                        <li>อุณหภูมิ: ${treatment.vitalSigns.temperature}</li>
+                        <li>อัตราการหายใจ: ${treatment.vitalSigns.respiratoryRate}</li>
+                    </ul>
+                    <p><strong>อาการ:</strong> ${treatment.symptoms}</p>
+                    <p><strong>การวินิจฉัย:</strong> ${treatment.diagnosis}</p>
+                    <p><strong>การรักษา:</strong> ${treatment.treatment}</p>
+                    <p><strong>ยาที่ได้รับ:</strong> ${treatment.medication}</p>
+                    <p><strong>วันนัดครั้งต่อไป:</strong> ${treatment.nextAppointment}</p>
+                    <h4>Body Chart:</h4>
+                    <img src="${treatment.bodyChart}" alt="Body Chart" style="max-width: 100%; height: auto;">
+                `;
+                document.getElementById('treatmentDetailContent').innerHTML = detailContent;
+                document.getElementById('treatmentDetailModal').style.display = 'block';
+            }
+        }
+
+        function closeTreatmentDetailModal() {
+            document.getElementById('treatmentDetailModal').style.display = 'none';
+        }
+
+        // เพิ่ม event listener สำหรับปิด modal เมื่อคลิกนอกกรอบ
+        window.onclick = function(event) {
+            const modal = document.getElementById('treatmentDetailModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
         }
 
         function searchPatients() {
