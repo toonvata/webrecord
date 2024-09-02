@@ -82,9 +82,29 @@
         th {
             background-color: #f2f2f2;
         }
-        #bodyChart {
+         .patient-info-box {
             border: 1px solid #ddd;
-            margin-top: 10px;
+            padding: 10px;
+            margin-bottom: 20px;
+            background-color: #f9f9f9;
+        }
+        #bodyChartContainer {
+            position: relative;
+            width: 300px;
+            height: 400px;
+        }
+        #bodyChartImage {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        #bodyChart {
+            position: absolute;
+            top: 0;
+            left: 0;
         }
     </style>
 </head>
@@ -111,7 +131,7 @@
                 <button type="submit">บันทึกข้อมูล</button>
             </form>
             
-            <h2>รายชื่อผู้ป่วย</h2>
+           <h2>รายชื่อผู้ป่วย</h2>
             <input type="text" id="patientSearch" placeholder="ค้นหาผู้ป่วย (ชื่อหรือ HN)">
             <table id="patientList">
                 <thead>
@@ -120,6 +140,7 @@
                         <th>ชื่อ-นามสกุล</th>
                         <th>วันเกิด</th>
                         <th>เบอร์โทรศัพท์</th>
+                        <th>การดำเนินการ</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -128,6 +149,8 @@
         
         <div id="treatmentTabContent" class="tab-content">
             <h2>บันทึกการรักษา</h2>
+            <input type="text" id="treatmentPatientSearch" placeholder="ค้นหาผู้ป่วย (ชื่อหรือ HN)">
+            <div id="selectedPatientInfo" class="patient-info-box"></div>
             <form id="treatmentForm">
                 <input type="text" id="treatmentPatientSearch" placeholder="ค้นหาผู้ป่วย (ชื่อหรือ HN)">
                 <input type="text" id="selectedPatient" placeholder="ผู้ป่วยที่เลือก" readonly>
@@ -147,7 +170,13 @@
                 <canvas id="bodyChart" width="300" height="400"></canvas>
                 <button type="submit">บันทึกการรักษา</button>
             </form>
-            
+            <div id="bodyChartContainer">
+                    <img id="bodyChartImage" src="/api/placeholder/300/400" alt="Body Chart">
+                    <canvas id="bodyChart" width="300" height="400"></canvas>
+                </div>
+                <button type="button" onclick="clearBodyChart()">ล้างรูปวาด</button>
+                <button type="submit">บันทึกการรักษา</button>
+            </form>
             <h2>ประวัติการรักษา</h2>
             <table id="treatmentHistory">
                 <thead>
@@ -163,7 +192,7 @@
         </div>
     </div>
 
-    <script>
+   <script>
         let patients = JSON.parse(localStorage.getItem('patients')) || [];
         let treatments = JSON.parse(localStorage.getItem('treatments')) || [];
         let selectedPatient = null;
@@ -188,16 +217,13 @@
 
         function initializeBodyChart() {
             canvas = new fabric.Canvas('bodyChart');
-            fabric.Image.fromURL('/api/placeholder/300/400', function(img) {
-                canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas), {
-                    scaleX: canvas.width / img.width,
-                    scaleY: canvas.height / img.height
-                });
-            });
-
             canvas.isDrawingMode = true;
-            canvas.freeDrawingBrush.width = 5;
+            canvas.freeDrawingBrush.width = 2;
             canvas.freeDrawingBrush.color = "#ff0000";
+        }
+
+        function clearBodyChart() {
+            canvas.clear();
         }
 
         function addPatient(e) {
@@ -244,8 +270,7 @@
             saveTreatments();
             loadTreatmentHistory();
             e.target.reset();
-            canvas.clear();
-            initializeBodyChart();
+            clearBodyChart();
         }
 
         function generateHN() {
@@ -269,13 +294,27 @@
                 row.insertCell(1).textContent = patient.name;
                 row.insertCell(2).textContent = patient.birthdate;
                 row.insertCell(3).textContent = patient.phone;
-                row.addEventListener('click', () => selectPatient(patient));
+                const actionsCell = row.insertCell(4);
+                actionsCell.innerHTML = `
+                    <button onclick="selectPatientForTreatment('${patient.hn}')">รักษา</button>
+                    <button onclick="deletePatient('${patient.hn}')">ลบ</button>
+                `;
             });
         }
 
         function selectPatient(patient) {
             selectedPatient = patient;
-            document.getElementById('selectedPatient').value = `${patient.name} (${patient.hn})`;
+            document.getElementById('selectedPatientInfo').innerHTML = `
+                <h3>ข้อมูลผู้ป่วย</h3>
+                <p><strong>HN:</strong> ${patient.hn}</p>
+                <p><strong>ชื่อ-นามสกุล:</strong> ${patient.name}</p>
+                <p><strong>วันเกิด:</strong> ${patient.birthdate}</p>
+                <p><strong>อาชีพ:</strong> ${patient.occupation}</p>
+                <p><strong>ที่อยู่:</strong> ${patient.address}</p>
+                <p><strong>เบอร์โทรศัพท์:</strong> ${patient.phone}</p>
+                <p><strong>โรคประจำตัว:</strong> ${patient.underlyingDisease}</p>
+                <p><strong>ประวัติการแพ้ยา:</strong> ${patient.allergies}</p>
+            `;
             loadTreatmentHistory();
         }
 
@@ -307,7 +346,11 @@
                 row.insertCell(1).textContent = patient.name;
                 row.insertCell(2).textContent = patient.birthdate;
                 row.insertCell(3).textContent = patient.phone;
-                row.addEventListener('click', () => selectPatient(patient));
+                const actionsCell = row.insertCell(4);
+                actionsCell.innerHTML = `
+                    <button onclick="selectPatientForTreatment('${patient.hn}')">รักษา</button>
+                    <button onclick="deletePatient('${patient.hn}')">ลบ</button>
+                `;
             });
         }
 
@@ -320,25 +363,44 @@
                 selectPatient(filteredPatients[0]);
             } else {
                 selectedPatient = null;
-                document.getElementById('selectedPatient').value = '';
+                document.getElementById('selectedPatientInfo').innerHTML = '';
             }
         }
-         function addSampleData() {
-        if (patients.length === 0) {
-            const samplePatients = [
-                { name: "สมชาย ใจดี", birthdate: "1980-05-15", occupation: "วิศวกร", address: "123 ถ.สุขุมวิท กรุงเทพฯ", phone: "0812345678", underlyingDisease: "ความดันโลหิตสูง", allergies: "ยาเพนนิซิลิน" },
-                { name: "สมหญิง รักดี", birthdate: "1992-10-20", occupation: "ครู", address: "456 ถ.พหลโยธิน กรุงเทพฯ", phone: "0898765432", underlyingDisease: "เบาหวาน", allergies: "ไม่มี" }
-            ];
 
-            samplePatients.forEach(patient => {
-                patient.hn = generateHN();
-                patients.push(patient);
-            });
+        function deletePatient(hn) {
+            if (confirm('คุณแน่ใจหรือไม่ที่จะลบข้อมูลผู้ป่วยรายนี้?')) {
+                patients = patients.filter(p => p.hn !== hn);
+                treatments = treatments.filter(t => t.patientHN !== hn);
+                savePatients();
+                saveTreatments();
+                loadPatients();
+                alert('ลบข้อมูลผู้ป่วยเรียบร้อยแล้ว');
+            }
+        }
 
-            savePatients();
-            loadPatients();
+        function selectPatientForTreatment(hn) {
+            const patient = patients.find(p => p.hn === hn);
+            if (patient) {
+                showTab('treatmentTabContent');
+                selectPatient(patient);
+            }
+        }
 
-            const sampleTreatments = [
+        function addSampleData() {
+            if (patients.length === 0) {
+                const samplePatients = [
+                    { name: "สมชาย ใจดี", birthdate: "1980-05-15", occupation: "วิศวกร", address: "123 ถ.สุขุมวิท กรุงเทพฯ", phone: "0812345678", underlyingDisease: "ความดันโลหิตสูง", allergies: "ยาเพนนิซิลิน" },
+                    { name: "สมหญิง รักดี", birthdate: "1992-10-20", occupation: "ครู", address: "456 ถ.พหลโยธิน กรุงเทพฯ", phone: "0898765432", underlyingDisease: "เบาหวาน", allergies: "ไม่มี" }
+                ];
+
+                samplePatients.forEach(patient => {
+                    patient.hn = generateHN();
+                    patients.push(patient);
+                });
+
+                savePatients();
+                loadPatients();
+                 const sampleTreatments = [
                 { 
                     patientHN: patients[0].hn, 
                     date: "2024-03-01", 
@@ -347,7 +409,8 @@
                     diagnosis: "ความเครียด", 
                     treatment: "พักผ่อน", 
                     medication: "พาราเซตามอล", 
-                    nextAppointment: "2024-03-15" 
+                    nextAppointment: "2024-03-15",
+                    bodyChart: "" // ไม่มีรูปวาดสำหรับข้อมูลตัวอย่าง
                 },
                 { 
                     patientHN: patients[1].hn, 
@@ -357,7 +420,8 @@
                     diagnosis: "ไข้หวัด", 
                     treatment: "พักผ่อน ดื่มน้ำมากๆ", 
                     medication: "ยาแก้ไอ ยาลดไข้", 
-                    nextAppointment: "2024-03-09" 
+                    nextAppointment: "2024-03-09",
+                    bodyChart: "" // ไม่มีรูปวาดสำหรับข้อมูลตัวอย่าง
                 }
             ];
 
@@ -369,9 +433,83 @@
         }
     }
 
+    // เพิ่มฟังก์ชันสำหรับการอัปเดต Body Chart
+    function updateBodyChart(dataUrl) {
+        if (dataUrl) {
+            fabric.Image.fromURL(dataUrl, function(img) {
+                canvas.clear();
+                canvas.add(img);
+                canvas.renderAll();
+            });
+        } else {
+            canvas.clear();
+        }
+    }
+
+    // อัปเดตฟังก์ชัน selectPatient เพื่อโหลด Body Chart
+    function selectPatient(patient) {
+        selectedPatient = patient;
+        document.getElementById('selectedPatientInfo').innerHTML = `
+            <h3>ข้อมูลผู้ป่วย</h3>
+            <p><strong>HN:</strong> ${patient.hn}</p>
+            <p><strong>ชื่อ-นามสกุล:</strong> ${patient.name}</p>
+            <p><strong>วันเกิด:</strong> ${patient.birthdate}</p>
+            <p><strong>อาชีพ:</strong> ${patient.occupation}</p>
+            <p><strong>ที่อยู่:</strong> ${patient.address}</p>
+            <p><strong>เบอร์โทรศัพท์:</strong> ${patient.phone}</p>
+            <p><strong>โรคประจำตัว:</strong> ${patient.underlyingDisease}</p>
+            <p><strong>ประวัติการแพ้ยา:</strong> ${patient.allergies}</p>
+        `;
+        loadTreatmentHistory();
+        
+        // โหลด Body Chart ล่าสุดของผู้ป่วย
+        const latestTreatment = treatments
+            .filter(t => t.patientHN === patient.hn)
+            .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+        
+        if (latestTreatment && latestTreatment.bodyChart) {
+            updateBodyChart(latestTreatment.bodyChart);
+        } else {
+            clearBodyChart();
+        }
+    }
+
+    // เพิ่มฟังก์ชันสำหรับการลบข้อมูลการรักษา
+    function deleteTreatment(patientHN, treatmentDate) {
+        if (confirm('คุณแน่ใจหรือไม่ที่จะลบข้อมูลการรักษานี้?')) {
+            treatments = treatments.filter(t => !(t.patientHN === patientHN && t.date === treatmentDate));
+            saveTreatments();
+            loadTreatmentHistory();
+            alert('ลบข้อมูลการรักษาเรียบร้อยแล้ว');
+        }
+    }
+
+    // อัปเดตฟังก์ชัน loadTreatmentHistory เพื่อเพิ่มปุ่มลบ
+    function loadTreatmentHistory() {
+        if (!selectedPatient) return;
+        const tbody = document.querySelector('#treatmentHistory tbody');
+        tbody.innerHTML = '';
+        treatments
+            .filter(t => t.patientHN === selectedPatient.hn)
+            .forEach(treatment => {
+                const row = tbody.insertRow();
+                row.insertCell(0).textContent = treatment.date;
+                row.insertCell(1).textContent = treatment.symptoms;
+                row.insertCell(2).textContent = treatment.diagnosis;
+                row.insertCell(3).textContent = treatment.treatment;
+                const deleteCell = row.insertCell(4);
+                deleteCell.innerHTML = `<button onclick="deleteTreatment('${treatment.patientHN}', '${treatment.date}')">ลบ</button>`;
+            });
+    }
+
     // เรียกใช้ฟังก์ชัน addSampleData เมื่อโหลดหน้าเว็บ
     document.addEventListener('DOMContentLoaded', function() {
-        // โค้ดอื่นๆ ที่มีอยู่ก่อนหน้านี้
+        initializeBodyChart();
+        loadPatients();
+        document.getElementById('patientForm').addEventListener('submit', addPatient);
+        document.getElementById('treatmentForm').addEventListener('submit', addTreatment);
+        document.getElementById('patientSearch').addEventListener('input', searchPatients);
+        document.getElementById('treatmentPatientSearch').addEventListener('input', searchPatientsForTreatment);
         addSampleData();
     });
 </script>
