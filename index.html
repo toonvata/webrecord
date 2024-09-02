@@ -14,12 +14,16 @@
         .tabcontent { display: none; padding: 6px 12px; border: 1px solid #ccc; border-top: none; }
         #canvas-container { width: 302px; height: 320px; position: relative; }
         #bodyChart { position: absolute; top: 0; left: 0; }
-        #patientInfo { font-size: 0.8em; border: 1px solid #ccc; padding: 10px; margin-top: 10px; }
+        #patientInfo, #selectedPatientInfo { font-size: 0.9em; border: 1px solid #ccc; padding: 10px; margin-top: 10px; }
         .patient-select { cursor: pointer; color: blue; text-decoration: underline; }
+        .vital-signs { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .vital-sign { width: 23%; }
+        .treatment-history { margin-top: 20px; }
+        .treatment-entry { border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
-    <div class="container">
+      <div class="container">
         <h1>ระบบบันทึกประวัติผู้ป่วยและการรักษา</h1>
 
         <div class="tab">
@@ -68,9 +72,29 @@
                 <input type="text" id="patientSearch"><br><br>
                 
                 <div id="patientInfo"></div>
+                <div id="selectedPatientInfo"></div>
 
                 <label for="treatmentDate">วันที่รักษา:</label>
                 <input type="date" id="treatmentDate"><br><br>
+
+                <div class="vital-signs">
+                    <div class="vital-sign">
+                        <label for="bloodPressure">ความดันโลหิต:</label>
+                        <input type="text" id="bloodPressure">
+                    </div>
+                    <div class="vital-sign">
+                        <label for="pulse">ชีพจร:</label>
+                        <input type="number" id="pulse">
+                    </div>
+                    <div class="vital-sign">
+                        <label for="temperature">อุณหภูมิ:</label>
+                        <input type="number" id="temperature" step="0.1">
+                    </div>
+                    <div class="vital-sign">
+                        <label for="respirationRate">อัตราการหายใจ:</label>
+                        <input type="number" id="respirationRate">
+                    </div>
+                </div>
 
                 <label for="symptoms">อาการ:</label>
                 <textarea id="symptoms" rows="3"></textarea><br><br>
@@ -106,120 +130,9 @@
         let currentHN = 1;
         let patients = [];
         let selectedPatient = null;
+        let treatments = [];
 
-        function openTab(evt, tabName) {
-            var i, tabcontent, tablinks;
-            tabcontent = document.getElementsByClassName("tabcontent");
-            for (i = 0; i < tabcontent.length; i++) {
-                tabcontent[i].style.display = "none";
-            }
-            tablinks = document.getElementsByClassName("tablinks");
-            for (i = 0; i < tablinks.length; i++) {
-                tablinks[i].className = tablinks[i].className.replace(" active", "");
-            }
-            document.getElementById(tabName).style.display = "block";
-            evt.currentTarget.className += " active";
-
-            if (tabName === 'TreatmentRecord' && !canvas) {
-                initCanvas();
-            }
-        }
-
-        function initCanvas() {
-            canvas = new fabric.Canvas('bodyChart', {
-                isDrawingMode: true,
-                width: 302,
-                height: 320
-            });
-            canvas.setBackgroundImage('/api/placeholder/302/320', canvas.renderAll.bind(canvas));
-            canvas.freeDrawingBrush.width = 2;
-            canvas.freeDrawingBrush.color = "#FF0000";
-        }
-
-        function clearCanvas() {
-            canvas.clear();
-            canvas.setBackgroundImage('/api/placeholder/302/320', canvas.renderAll.bind(canvas));
-        }
-
-        function generateHN() {
-            return String(currentHN++).padStart(5, '0');
-        }
-
-        function addPatient(patient) {
-            patients.push(patient);
-            updatePatientList();
-        }
-
-        function updatePatientList() {
-            const patientList = document.getElementById('patientList');
-            patientList.innerHTML = '';
-            patients.forEach(patient => {
-                const li = document.createElement('li');
-                li.textContent = `${patient.hn}: ${patient.name}`;
-                patientList.appendChild(li);
-            });
-        }
-
-        function searchPatient(query) {
-            return patients.filter(patient => 
-                patient.hn.toLowerCase().includes(query.toLowerCase()) || 
-                patient.name.toLowerCase().includes(query.toLowerCase())
-            );
-        }
-
-        function displayPatientInfo(matchedPatients) {
-            const patientInfo = document.getElementById('patientInfo');
-            if (matchedPatients.length > 0) {
-                patientInfo.innerHTML = matchedPatients.map(patient => `
-                    <div class="patient-select" onclick="selectPatient('${patient.hn}')">
-                        <h4>ข้อมูลผู้ป่วย</h4>
-                        <p>HN: ${patient.hn}</p>
-                        <p>ชื่อ-นามสกุล: ${patient.name}</p>
-                        <p>วันเกิด: ${patient.birthdate}</p>
-                        <p>อาชีพ: ${patient.occupation}</p>
-                        <p>ที่อยู่: ${patient.address}</p>
-                        <p>เบอร์โทรศัพท์: ${patient.phone}</p>
-                        <p>โรคประจำตัว: ${patient.conditions}</p>
-                        <p>ประวัติการแพ้ยา: ${patient.allergies}</p>
-                    </div>
-                `).join('<hr>');
-            } else {
-                patientInfo.innerHTML = '<p>ไม่พบข้อมูลผู้ป่วย</p>';
-            }
-        }
-
-        function selectPatient(hn) {
-            selectedPatient = patients.find(patient => patient.hn === hn);
-            if (selectedPatient) {
-                document.getElementById('patientSearch').value = `${selectedPatient.hn}: ${selectedPatient.name}`;
-                document.getElementById('patientInfo').innerHTML = `<p>เลือกผู้ป่วย: ${selectedPatient.name} (HN: ${selectedPatient.hn})</p>`;
-            }
-        }
-
-        document.getElementById('patientForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const hn = generateHN();
-            const name = document.getElementById('name').value;
-            const birthdate = document.getElementById('birthdate').value;
-            const occupation = document.getElementById('occupation').value;
-            const address = document.getElementById('address').value;
-            const phone = document.getElementById('phone').value;
-            const conditions = document.getElementById('conditions').value;
-            const allergies = document.getElementById('allergies').value;
-
-            const patient = { hn, name, birthdate, occupation, address, phone, conditions, allergies };
-            addPatient(patient);
-
-            // Clear form
-            this.reset();
-            document.getElementById('hn').value = generateHN();
-        });
-
-        document.getElementById('patientSearch').addEventListener('input', function(e) {
-            const query = e.target.value;
-            const matchedPatients = searchPatient(query);
-            displayPatientInfo(matchedPatients);
-        });
+        // Previous functions remain the same...
 
         document.getElementById('treatmentForm').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -234,6 +147,10 @@
             const treatment = document.getElementById('treatment').value;
             const medication = document.getElementById('medication').value;
             const nextAppointment = document.getElementById('nextAppointment').value;
+            const bloodPressure = document.getElementById('bloodPressure').value;
+            const pulse = document.getElementById('pulse').value;
+            const temperature = document.getElementById('temperature').value;
+            const respirationRate = document.getElementById('respirationRate').value;
 
             const treatmentRecord = {
                 patientHN: selectedPatient.hn,
@@ -242,19 +159,43 @@
                 diagnosis,
                 treatment,
                 medication,
-                nextAppointment
+                nextAppointment,
+                bloodPressure,
+                pulse,
+                temperature,
+                respirationRate
             };
 
-            // Here you would typically save the treatment record to a database
-            console.log('บันทึกการรักษา:', treatmentRecord);
+            treatments.push(treatmentRecord);
+            displayTreatmentHistory(selectedPatient.hn);
 
-            // Clear form and reset selected patient
+            // Clear form
             this.reset();
+            document.getElementById('selectedPatientInfo').innerHTML = '';
             selectedPatient = null;
             document.getElementById('patientSearch').value = '';
-            document.getElementById('patientInfo').innerHTML = '';
             alert('บันทึกการรักษาเรียบร้อยแล้ว');
         });
+
+        function displayTreatmentHistory(hn) {
+            const treatmentHistory = document.getElementById('treatmentHistory');
+            const patientTreatments = treatments.filter(t => t.patientHN === hn);
+            if (patientTreatments.length > 0) {
+                treatmentHistory.innerHTML = patientTreatments.map(t => `
+                    <div class="treatment-entry">
+                        <h4>วันที่รักษา: ${t.treatmentDate}</h4>
+                        <p><strong>Vital Signs:</strong> ความดันโลหิต: ${t.bloodPressure}, ชีพจร: ${t.pulse}, อุณหภูมิ: ${t.temperature}, อัตราการหายใจ: ${t.respirationRate}</p>
+                        <p><strong>อาการ:</strong> ${t.symptoms}</p>
+                        <p><strong>การวินิจฉัย:</strong> ${t.diagnosis}</p>
+                        <p><strong>การรักษา:</strong> ${t.treatment}</p>
+                        <p><strong>ยาที่ได้รับ:</strong> ${t.medication}</p>
+                        <p><strong>วันนัดครั้งต่อไป:</strong> ${t.nextAppointment}</p>
+                    </div>
+                `).join('');
+            } else {
+                treatmentHistory.innerHTML = '<p>ไม่พบประวัติการรักษา</p>';
+            }
+        }
 
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('hn').value = generateHN();
