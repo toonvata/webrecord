@@ -31,11 +31,6 @@
         h1, h2, h3 {
             color: var(--primary-color);
         }
-        .grid-container {
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 20px;
-        }
         .form-group {
             margin-bottom: 15px;
         }
@@ -112,93 +107,169 @@
             width: 100%;
             height: 100%;
         }
+        .tab {
+            overflow: hidden;
+            border: 1px solid #ccc;
+            background-color: #f1f1f1;
+        }
+        .tab button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 16px;
+            transition: 0.3s;
+        }
+        .tab button:hover {
+            background-color: #ddd;
+        }
+        .tab button.active {
+            background-color: #ccc;
+        }
+        .tabcontent {
+            display: none;
+            padding: 6px 12px;
+            border: 1px solid #ccc;
+            border-top: none;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>ระบบบันทึกประวัติผู้ป่วยและการรักษา</h1>
         
-        <div class="grid-container">
-            <div id="visitHistory">
-                <h2>ประวัติการรักษา</h2>
-                <div id="visitRecords"></div>
-            </div>
+        <div class="tab">
+            <button class="tablinks" onclick="openTab(event, 'PatientInfo')" id="defaultOpen">ข้อมูลผู้ป่วย</button>
+            <button class="tablinks" onclick="openTab(event, 'TreatmentRecord')">บันทึกการรักษา</button>
+        </div>
+
+        <div id="PatientInfo" class="tabcontent">
+            <h2>บันทึกข้อมูลผู้ป่วย</h2>
+            <form id="patientInfoForm">
+                <div class="form-group">
+                    <label for="patientName">ชื่อ-นามสกุล:</label>
+                    <input type="text" id="patientName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="dateOfBirth">วันเดือนปีเกิด:</label>
+                    <input type="date" id="dateOfBirth" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="age">อายุ:</label>
+                    <input type="number" id="age" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="occupation">อาชีพ:</label>
+                    <input type="text" id="occupation">
+                </div>
+                
+                <div class="form-group">
+                    <label for="address">ที่อยู่:</label>
+                    <textarea id="address" rows="3"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="phoneNumber">เบอร์โทรศัพท์:</label>
+                    <input type="tel" id="phoneNumber">
+                </div>
+                
+                <div class="form-group">
+                    <label for="underlyingDisease">โรคประจำตัว:</label>
+                    <textarea id="underlyingDisease" rows="2"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="drugAllergy">ประวัติการแพ้ยา:</label>
+                    <textarea id="drugAllergy" rows="2"></textarea>
+                </div>
+                
+                <button type="submit">บันทึกข้อมูลผู้ป่วย</button>
+            </form>
             
-            <div id="treatmentRecord">
-                <h2>บันทึกการรักษา</h2>
-                <form id="treatmentForm">
-                    <div class="form-group">
-                        <label for="patientSearch">ค้นหาผู้ป่วย (ชื่อ หรือ HN):</label>
-                        <input type="text" id="patientSearch" autocomplete="off">
-                        <div id="searchResults" class="search-results"></div>
-                    </div>
-                    
-                    <div id="selectedPatientInfo"></div>
-                    
-                    <h3>Vital Signs</h3>
-                    <div class="vital-signs">
-                        <div class="form-group">
-                            <label for="bp">BP (mmHg):</label>
-                            <input type="text" id="bp" placeholder="เช่น 120/80">
-                        </div>
-                        <div class="form-group">
-                            <label for="hr">HR (bpm):</label>
-                            <input type="number" id="hr">
-                        </div>
-                        <div class="form-group">
-                            <label for="bt">BT (°C):</label>
-                            <input type="number" id="bt" step="0.1">
-                        </div>
-                        <div class="form-group">
-                            <label for="rr">RR (bpm):</label>
-                            <input type="number" id="rr">
-                        </div>
-                    </div>
+            <div id="patientList">
+                <h3>รายชื่อผู้ป่วย</h3>
+                <ul id="patients"></ul>
+            </div>
+        </div>
 
-                    <h3>Body Chart</h3>
-                    <div id="bodyChartContainer">
-                        <svg id="bodyChart" viewBox="0 0 200 400">
-                            <!-- Front view -->
-                            <path d="M100,30 a20,20 0 1,1 0,0.1 v20 M80,70 h40 M60,100 h80 M90,150 v50 M110,150 v50" fill="none" stroke="#000" stroke-width="2"/>
-                            <!-- Back view -->
-                            <path d="M100,230 a20,20 0 1,1 0,0.1 v20 M80,270 h40 M60,300 h80 M90,350 v50 M110,350 v50" fill="none" stroke="#000" stroke-width="2"/>
-                        </svg>
-                        <svg id="drawLayer" viewBox="0 0 200 400"></svg>
+        <div id="TreatmentRecord" class="tabcontent">
+            <h2>บันทึกการรักษา</h2>
+            <form id="treatmentForm">
+                <div class="form-group">
+                    <label for="patientSearch">ค้นหาผู้ป่วย (ชื่อ หรือ HN):</label>
+                    <input type="text" id="patientSearch" autocomplete="off">
+                    <div id="searchResults" class="search-results"></div>
+                </div>
+                
+                <div id="selectedPatientInfo"></div>
+                
+                <h3>Vital Signs</h3>
+                <div class="vital-signs">
+                    <div class="form-group">
+                        <label for="bp">BP (mmHg):</label>
+                        <input type="text" id="bp" placeholder="เช่น 120/80">
                     </div>
-                    <button type="button" onclick="clearBodyChart()">ล้าง Body Chart</button>
+                    <div class="form-group">
+                        <label for="hr">HR (bpm):</label>
+                        <input type="number" id="hr">
+                    </div>
+                    <div class="form-group">
+                        <label for="bt">BT (°C):</label>
+                        <input type="number" id="bt" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label for="rr">RR (bpm):</label>
+                        <input type="number" id="rr">
+                    </div>
+                </div>
 
-                    <div class="form-group">
-                        <label for="visitDate">วันที่รักษา:</label>
-                        <input type="date" id="visitDate" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="symptoms">อาการ:</label>
-                        <textarea id="symptoms" rows="3" required></textarea>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="diagnosis">การวินิจฉัย:</label>
-                        <textarea id="diagnosis" rows="3" required></textarea>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="treatment">การรักษา:</label>
-                        <textarea id="treatment" rows="3" required></textarea>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="medication">ยาที่ได้รับ:</label>
-                        <input type="text" id="medication">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="nextAppointment">วันนัดครั้งต่อไป:</label>
-                        <input type="date" id="nextAppointment">
-                    </div>
-                    
-                    <button type="submit">บันทึกการรักษา</button>
-                </form>
+               <h3>Body Chart</h3>
+                <div id="bodyChartContainer">
+                    <input type="file" id="bodyChartUpload" accept="image/*">
+                    <img id="bodyChartPreview" src="#" alt="Body Chart Preview" style="max-width: 100%; display: none;">
+                </div>
+                <button type="button" onclick="clearBodyChart()">ล้าง Body Chart</button>
+
+                <div class="form-group">
+                    <label for="visitDate">วันที่รักษา:</label>
+                    <input type="date" id="visitDate" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="symptoms">อาการ:</label>
+                    <textarea id="symptoms" rows="3" required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="diagnosis">การวินิจฉัย:</label>
+                    <textarea id="diagnosis" rows="3" required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="treatment">การรักษา:</label>
+                    <textarea id="treatment" rows="3" required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="medication">ยาที่ได้รับ:</label>
+                    <input type="text" id="medication">
+                </div>
+                
+                <div class="form-group">
+                    <label for="nextAppointment">วันนัดครั้งต่อไป:</label>
+                    <input type="date" id="nextAppointment">
+                </div>
+                
+                <button type="submit">บันทึกการรักษา</button>
+            </form>
+            
+            <div id="visitHistory">
+                <h3>ประวัติการรักษา</h3>
+                <div id="visitRecords"></div>
             </div>
         </div>
     </div>
@@ -208,6 +279,7 @@
         let currentHN = parseInt(localStorage.getItem('currentHN') || '0');
 
         const visitRecords = document.getElementById('visitRecords');
+        const patientsList = document.getElementById('patients');
         const selectedPatientInfo = document.getElementById('selectedPatientInfo');
         const searchResults = document.getElementById('searchResults');
         const bodyChart = document.getElementById('bodyChart');
@@ -227,6 +299,40 @@
             return 'HN' + currentHN.toString().padStart(6, '0');
         }
 
+        function updatePatientList() {
+            patientsList.innerHTML = '';
+            patients.forEach(patient => {
+                const li = document.createElement('li');
+                li.textContent = `${patient.name} (HN: ${patient.hn})`;
+                patientsList.appendChild(li);
+            });
+        }
+
+        document.getElementById('patientInfoForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const newPatient = {
+                hn: generateHN(),
+                name: document.getElementById('patientName').value,
+                dateOfBirth: document.getElementById('dateOfBirth').value,
+                age: document.getElementById('age').value,
+                occupation: document.getElementById('occupation').value,
+                address: document.getElementById('address').value,
+                phoneNumber: document.getElementById('phoneNumber').value,
+                underlyingDisease: document.getElementById('underlyingDisease').value,
+                drugAllergy: document.getElementById('drugAllergy').value,
+                visits: []
+            };
+            
+            patients.push(newPatient);
+            savePatients();
+            updatePatientList();
+            
+            this.reset();
+            
+            console.log('บันทึกข้อมูลผู้ป่วยใหม่:', newPatient);
+        });
+
         patientSearch.addEventListener('input', function() {
             const searchTerm = this.value.toLowerCase();
             const filteredPatients = patients.filter(patient => 
@@ -245,7 +351,7 @@
                 div.textContent = `${patient.name} (HN: ${patient.hn})`;
                 div.addEventListener('click', () => selectPatient(patient));
                 searchResults.appendChild(div);
-            });
+                });
             
             searchResults.style.display = results.length ? 'block' : 'none';
         }
@@ -285,7 +391,7 @@
             const hr = document.getElementById('hr').value;
             const bt = document.getElementById('bt').value;
             const rr = document.getElementById('rr').value;
-            const bodyChartData = drawLayer.innerHTML;
+            const bodyChartImage = document.getElementById('bodyChartUpload').files[0];
             
             const newVisit = {
                 date: visitDate,
@@ -295,9 +401,34 @@
                 medication: medication,
                 nextAppointment: nextAppointment,
                 vitalSigns: { bp, hr, bt, rr },
-                bodyChart: bodyChartData
+                bodyChart: null
             };
-            
+
+            if (bodyChartImage) {
+                const reader = new FileReader();
+                reader.onloadend = function() {
+                    newVisit.bodyChart = reader.result;
+                    saveVisit(patientHN, newVisit);
+                }
+                reader.readAsDataURL(bodyChartImage);
+            } else {
+                saveVisit(patientHN, newVisit);
+            }
+        });
+          document.getElementById('bodyChartUpload').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('bodyChartPreview');
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+</script>
+        function saveVisit(patientHN, newVisit) {
             const patient = patients.find(p => p.hn === patientHN);
             if (patient) {
                 if (!patient.visits) {
@@ -308,16 +439,15 @@
                 updateVisitHistory(patient);
             }
             
-            this.reset();
+            document.getElementById('treatmentForm').reset();
             patientSearch.value = '';
             patientSearch.removeAttribute('data-hn');
             selectedPatientInfo.innerHTML = '';
-            clearBodyChart();
             
             console.log('บันทึกการรักษา:', newVisit);
-        });
+        }
 
-       function updateVisitHistory(patient) {
+        function updateVisitHistory(patient) {
             visitRecords.innerHTML = '';
             if (patient.visits && patient.visits.length > 0) {
                 patient.visits.forEach((visit, index) => {
@@ -341,101 +471,63 @@
             const patient = patients.find(p => p.hn === hn);
             if (patient && patient.visits[visitIndex]) {
                 const visit = patient.visits[visitIndex];
-                const bodyChartWindow = window.open("", "Body Chart", "width=400,height=600");
-                bodyChartWindow.document.write(`
-                    <h2>Body Chart</h2>
-                    <svg viewBox="0 0 200 400" width="400" height="600">
-                        ${visit.bodyChart}
-                    </svg>
-                `);
+                let bodyChartHtml = '';
+                if (visit.bodyChart) {
+                    bodyChartHtml = `<img src="${visit.bodyChart}" alt="Body Chart" style="max-width: 100%; height: auto;">`;
+                }
                 
-                alert(`รายละเอียดการรักษา:
-                วันที่: ${visit.date}
-                Vital Signs:
-                - BP: ${visit.vitalSigns?.bp || 'N/A'}
-                - HR: ${visit.vitalSigns?.hr || 'N/A'}
-                - BT: ${visit.vitalSigns?.bt || 'N/A'}
-                - RR: ${visit.vitalSigns?.rr || 'N/A'}
-                อาการ: ${visit.symptoms}
-                การวินิจฉัย: ${visit.diagnosis}
-                การรักษา: ${visit.treatment}
-                ยาที่ได้รับ: ${visit.medication}
-                วันนัดครั้งต่อไป: ${visit.nextAppointment}`);
+                const detailsWindow = window.open("", "Visit Details", "width=600,height=800");
+                detailsWindow.document.write(`
+                    <h2>รายละเอียดการรักษา</h2>
+                    <p><strong>วันที่:</strong> ${visit.date}</p>
+                    <p><strong>Vital Signs:</strong></p>
+                    <ul>
+                        <li>BP: ${visit.vitalSigns?.bp || 'N/A'}</li>
+                        <li>HR: ${visit.vitalSigns?.hr || 'N/A'}</li>
+                        <li>BT: ${visit.vitalSigns?.bt || 'N/A'}</li>
+                        <li>RR: ${visit.vitalSigns?.rr || 'N/A'}</li>
+                    </ul>
+                    <p><strong>อาการ:</strong> ${visit.symptoms}</p>
+                    <p><strong>การวินิจฉัย:</strong> ${visit.diagnosis}</p>
+                    <p><strong>การรักษา:</strong> ${visit.treatment}</p>
+                    <p><strong>ยาที่ได้รับ:</strong> ${visit.medication}</p>
+                    <p><strong>วันนัดครั้งต่อไป:</strong> ${visit.nextAppointment}</p>
+                    <h3>Body Chart</h3>
+                    ${bodyChartHtml}
+                `);
             }
         }
 
-        // Body Chart functions
-        drawLayer.addEventListener('mousedown', startDrawing);
-        drawLayer.addEventListener('mousemove', draw);
-        drawLayer.addEventListener('mouseup', stopDrawing);
-        drawLayer.addEventListener('mouseleave', stopDrawing);
-
-        function startDrawing(e) {
-            isDrawing = true;
-            const point = getMousePosition(e);
-            currentPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-            currentPath.setAttribute("d", `M${point.x},${point.y}`);
-            currentPath.setAttribute("fill", "none");
-            currentPath.setAttribute("stroke", "red");
-            currentPath.setAttribute("stroke-width", "2");
-            drawLayer.appendChild(currentPath);
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tabcontent");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("tablinks");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
         }
 
-        function draw(e) {
-            if (!isDrawing) return;
-            const point = getMousePosition(e);
-            const d = currentPath.getAttribute("d");
-            currentPath.setAttribute("d", d + ` L${point.x},${point.y}`);
-        }
+        // เปิดแท็บ "ข้อมูลผู้ป่วย" เป็นค่าเริ่มต้น
+        document.getElementById("defaultOpen").click();
 
-        function stopDrawing() {
-            isDrawing = false;
+        updatePatientList();
+                  document.getElementById('bodyChartUpload').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('bodyChartPreview');
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            }
+            reader.readAsDataURL(file);
         }
-
-        function getMousePosition(e) {
-            const rect = drawLayer.getBoundingClientRect();
-            const scaleX = drawLayer.viewBox.baseVal.width / rect.width;
-            const scaleY = drawLayer.viewBox.baseVal.height / rect.height;
-            return {
-                x: (e.clientX - rect.left) * scaleX,
-                y: (e.clientY - rect.top) * scaleY
-            };
-        }
-
-        function clearBodyChart() {
-            drawLayer.innerHTML = '';
-        }
-
-        // โหลดข้อมูลตัวอย่างเมื่อเริ่มต้นใช้งาน (สำหรับการทดสอบ)
-        if (patients.length === 0) {
-            patients = [
-                { 
-                    hn: "HN000001", 
-                    name: "สมชาย ใจดี", 
-                    dateOfBirth: "1990-05-15", 
-                    age: 34, 
-                    occupation: "วิศวกร", 
-                    address: "123 ถ.สุขุมวิท กรุงเทพฯ", 
-                    phoneNumber: "0812345678", 
-                    underlyingDisease: "ความดันโลหิตสูง", 
-                    drugAllergy: "ไม่มี",
-                    visits: [
-                        {
-                            date: "2024-05-01",
-                            symptoms: "ปวดหัว มีไข้",
-                            diagnosis: "ไข้หวัดใหญ่",
-                            treatment: "ให้ยาลดไข้และยาแก้ปวด",
-                            medication: "พาราเซตามอล, ไอบูโพรเฟน",
-                            nextAppointment: "2024-05-08",
-                            vitalSigns: { bp: "120/80", hr: "72", bt: "37.5", rr: "16" },
-                            bodyChart: ""
-                        }
-                    ]
-                }
-            ];
-            currentHN = 1;
-            savePatients();
-        }
-    </script>
+    });
+</script>
 </body>
 </html>
