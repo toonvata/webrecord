@@ -4,48 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ระบบบันทึกประวัติผู้ป่วยและการรักษา</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/521/fabric.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
     <style>
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .tab {
-            overflow: hidden;
-            border: 1px solid #ccc;
-            background-color: #f1f1f1;
-        }
-        .tab button {
-            background-color: inherit;
-            float: left;
-            border: none;
-            outline: none;
-            cursor: pointer;
-            padding: 14px 16px;
-            transition: 0.3s;
-        }
-        .tab button:hover {
-            background-color: #ddd;
-        }
-        .tab button.active {
-            background-color: #ccc;
-        }
-        .tabcontent {
-            display: none;
-            padding: 6px 12px;
-            border: 1px solid #ccc;
-            border-top: none;
-        }
-        #canvas-container {
-            margin-top: 20px;
-        }
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        .tab { overflow: hidden; border: 1px solid #ccc; background-color: #f1f1f1; }
+        .tab button { background-color: inherit; float: left; border: none; outline: none; cursor: pointer; padding: 14px 16px; transition: 0.3s; }
+        .tab button:hover { background-color: #ddd; }
+        .tab button.active { background-color: #ccc; }
+        .tabcontent { display: none; padding: 6px 12px; border: 1px solid #ccc; border-top: none; }
+        #canvas-container { width: 302px; height: 320px; position: relative; }
+        #bodyChart { position: absolute; top: 0; left: 0; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>ระบบบันทึกประวัติผู้ป่วยและการรักษา</h1>
-        
+
         <div class="tab">
             <button class="tablinks" onclick="openTab(event, 'PatientInfo')">ข้อมูลผู้ป่วย</button>
             <button class="tablinks" onclick="openTab(event, 'TreatmentRecord')">บันทึกการรักษา</button>
@@ -54,27 +28,30 @@
         <div id="PatientInfo" class="tabcontent">
             <h2>บันทึกข้อมูลผู้ป่วย</h2>
             <form id="patientForm">
+                <label for="hn">HN:</label>
+                <input type="text" id="hn" readonly><br><br>
+
                 <label for="name">ชื่อ-นามสกุล:</label>
-                <input type="text" id="name" name="name" required><br><br>
-                
+                <input type="text" id="name"><br><br>
+
                 <label for="birthdate">วันเกิด:</label>
-                <input type="date" id="birthdate" name="birthdate" required><br><br>
-                
+                <input type="date" id="birthdate"><br><br>
+
                 <label for="occupation">อาชีพ:</label>
-                <input type="text" id="occupation" name="occupation"><br><br>
-                
+                <input type="text" id="occupation"><br><br>
+
                 <label for="address">ที่อยู่:</label>
-                <textarea id="address" name="address"></textarea><br><br>
-                
+                <textarea id="address" rows="3"></textarea><br><br>
+
                 <label for="phone">เบอร์โทรศัพท์:</label>
-                <input type="tel" id="phone" name="phone"><br><br>
-                
-                <label for="diseases">โรคประจำตัว:</label>
-                <textarea id="diseases" name="diseases"></textarea><br><br>
-                
+                <input type="tel" id="phone"><br><br>
+
+                <label for="conditions">โรคประจำตัว:</label>
+                <textarea id="conditions" rows="3"></textarea><br><br>
+
                 <label for="allergies">ประวัติการแพ้ยา:</label>
-                <textarea id="allergies" name="allergies"></textarea><br><br>
-                
+                <textarea id="allergies" rows="3"></textarea><br><br>
+
                 <button type="submit">บันทึกข้อมูลผู้ป่วย</button>
             </form>
 
@@ -85,32 +62,33 @@
         <div id="TreatmentRecord" class="tabcontent">
             <h2>บันทึกการรักษา</h2>
             <form id="treatmentForm">
-                <label for="patientSelect">เลือกผู้ป่วย:</label>
-                <select id="patientSelect" name="patientSelect" required></select><br><br>
-                
+                <label for="patientSearch">ค้นหาผู้ป่วย (ชื่อ หรือ HN):</label>
+                <input type="text" id="patientSearch"><br><br>
+
                 <label for="treatmentDate">วันที่รักษา:</label>
-                <input type="date" id="treatmentDate" name="treatmentDate" required><br><br>
-                
+                <input type="date" id="treatmentDate"><br><br>
+
                 <label for="symptoms">อาการ:</label>
-                <textarea id="symptoms" name="symptoms" required></textarea><br><br>
-                
+                <textarea id="symptoms" rows="3"></textarea><br><br>
+
                 <label for="diagnosis">การวินิจฉัย:</label>
-                <textarea id="diagnosis" name="diagnosis" required></textarea><br><br>
-                
+                <textarea id="diagnosis" rows="3"></textarea><br><br>
+
                 <label for="treatment">การรักษา:</label>
-                <textarea id="treatment" name="treatment" required></textarea><br><br>
-                
+                <textarea id="treatment" rows="3"></textarea><br><br>
+
                 <label for="medication">ยาที่ได้รับ:</label>
-                <textarea id="medication" name="medication"></textarea><br><br>
-                
+                <textarea id="medication" rows="3"></textarea><br><br>
+
                 <label for="nextAppointment">วันนัดครั้งต่อไป:</label>
-                <input type="date" id="nextAppointment" name="nextAppointment"><br><br>
-                
+                <input type="date" id="nextAppointment"><br><br>
+
                 <div id="canvas-container">
-                    <canvas id="drawingCanvas" width="400" height="300" style="border:1px solid #000000;"></canvas><br>
-                    <button type="button" onclick="clearCanvas()">ล้างรูปวาด</button>
-                </div><br>
-                
+                    <img src="/api/placeholder/302/320" alt="Body Chart" id="bodyChartImage" />
+                    <canvas id="bodyChart"></canvas>
+                </div>
+                <button type="button" onclick="clearCanvas()">ล้างรูปวาด</button><br><br>
+
                 <button type="submit">บันทึกการรักษา</button>
             </form>
 
@@ -121,8 +99,7 @@
 
     <script>
         let canvas;
-        let patients = [];
-        let treatments = [];
+        let currentHN = 1000;
 
         function openTab(evt, tabName) {
             var i, tabcontent, tablinks;
@@ -136,88 +113,43 @@
             }
             document.getElementById(tabName).style.display = "block";
             evt.currentTarget.className += " active";
+
+            if (tabName === 'TreatmentRecord' && !canvas) {
+                initCanvas();
+            }
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            canvas = new fabric.Canvas('drawingCanvas');
-            canvas.isDrawingMode = true;
-            canvas.freeDrawingBrush.width = 3;
-            canvas.freeDrawingBrush.color = "#000000";
-
-            document.getElementById('patientForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                const patient = {
-                    name: document.getElementById('name').value,
-                    birthdate: document.getElementById('birthdate').value,
-                    occupation: document.getElementById('occupation').value,
-                    address: document.getElementById('address').value,
-                    phone: document.getElementById('phone').value,
-                    diseases: document.getElementById('diseases').value,
-                    allergies: document.getElementById('allergies').value
-                };
-                patients.push(patient);
-                updatePatientList();
-                this.reset();
+        function initCanvas() {
+            canvas = new fabric.Canvas('bodyChart', {
+                isDrawingMode: true,
+                width: 302,
+                height: 320
             });
-
-            document.getElementById('treatmentForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                const treatment = {
-                    patientName: document.getElementById('patientSelect').value,
-                    date: document.getElementById('treatmentDate').value,
-                    symptoms: document.getElementById('symptoms').value,
-                    diagnosis: document.getElementById('diagnosis').value,
-                    treatment: document.getElementById('treatment').value,
-                    medication: document.getElementById('medication').value,
-                    nextAppointment: document.getElementById('nextAppointment').value,
-                    drawing: canvas.toDataURL()
-                };
-                treatments.push(treatment);
-                updateTreatmentHistory();
-                this.reset();
-                clearCanvas();
-            });
-        });
-
-        function updatePatientList() {
-            const patientList = document.getElementById('patientList');
-            const patientSelect = document.getElementById('patientSelect');
-            patientList.innerHTML = '';
-            patientSelect.innerHTML = '';
-            patients.forEach(patient => {
-                const li = document.createElement('li');
-                li.textContent = patient.name;
-                patientList.appendChild(li);
-
-                const option = document.createElement('option');
-                option.value = patient.name;
-                option.textContent = patient.name;
-                patientSelect.appendChild(option);
-            });
-        }
-
-        function updateTreatmentHistory() {
-            const treatmentHistory = document.getElementById('treatmentHistory');
-            treatmentHistory.innerHTML = '';
-            treatments.forEach(treatment => {
-                const div = document.createElement('div');
-                div.innerHTML = `
-                    <h4>${treatment.patientName} - ${treatment.date}</h4>
-                    <p><strong>อาการ:</strong> ${treatment.symptoms}</p>
-                    <p><strong>การวินิจฉัย:</strong> ${treatment.diagnosis}</p>
-                    <p><strong>การรักษา:</strong> ${treatment.treatment}</p>
-                    <p><strong>ยาที่ได้รับ:</strong> ${treatment.medication}</p>
-                    <p><strong>วันนัดครั้งต่อไป:</strong> ${treatment.nextAppointment}</p>
-                    <img src="${treatment.drawing}" alt="Patient Drawing" style="max-width: 100%;">
-                    <hr>
-                `;
-                treatmentHistory.appendChild(div);
-            });
+            canvas.setBackgroundImage('/api/placeholder/302/320', canvas.renderAll.bind(canvas));
+            canvas.freeDrawingBrush.width = 2;
+            canvas.freeDrawingBrush.color = "#FF0000";
         }
 
         function clearCanvas() {
             canvas.clear();
+            canvas.setBackgroundImage('/api/placeholder/302/320', canvas.renderAll.bind(canvas));
         }
+
+        document.getElementById('patientForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            currentHN++;
+            document.getElementById('hn').value = 'HN' + currentHN;
+            // Add logic to save patient data
+        });
+
+        document.getElementById('treatmentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            // Add logic to save treatment data
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('hn').value = 'HN' + currentHN;
+        });
     </script>
 </body>
 </html>
