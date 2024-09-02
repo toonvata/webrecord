@@ -14,6 +14,7 @@
         .tabcontent { display: none; padding: 6px 12px; border: 1px solid #ccc; border-top: none; }
         #canvas-container { width: 302px; height: 320px; position: relative; }
         #bodyChart { position: absolute; top: 0; left: 0; }
+        #patientInfo { font-size: 0.8em; border: 1px solid #ccc; padding: 10px; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -64,6 +65,8 @@
             <form id="treatmentForm">
                 <label for="patientSearch">ค้นหาผู้ป่วย (ชื่อ หรือ HN):</label>
                 <input type="text" id="patientSearch"><br><br>
+                
+                <div id="patientInfo"></div>
 
                 <label for="treatmentDate">วันที่รักษา:</label>
                 <input type="date" id="treatmentDate"><br><br>
@@ -155,6 +158,32 @@
             });
         }
 
+        function searchPatient(query) {
+            return patients.find(patient => 
+                patient.hn.toLowerCase().includes(query.toLowerCase()) || 
+                patient.name.toLowerCase().includes(query.toLowerCase())
+            );
+        }
+
+        function displayPatientInfo(patient) {
+            const patientInfo = document.getElementById('patientInfo');
+            if (patient) {
+                patientInfo.innerHTML = `
+                    <h4>ข้อมูลผู้ป่วย</h4>
+                    <p>HN: ${patient.hn}</p>
+                    <p>ชื่อ-นามสกุล: ${patient.name}</p>
+                    <p>วันเกิด: ${patient.birthdate}</p>
+                    <p>อาชีพ: ${patient.occupation}</p>
+                    <p>ที่อยู่: ${patient.address}</p>
+                    <p>เบอร์โทรศัพท์: ${patient.phone}</p>
+                    <p>โรคประจำตัว: ${patient.conditions}</p>
+                    <p>ประวัติการแพ้ยา: ${patient.allergies}</p>
+                `;
+            } else {
+                patientInfo.innerHTML = '<p>ไม่พบข้อมูลผู้ป่วย</p>';
+            }
+        }
+
         document.getElementById('patientForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const hn = generateHN();
@@ -172,6 +201,12 @@
             // Clear form
             this.reset();
             document.getElementById('hn').value = generateHN();
+        });
+
+        document.getElementById('patientSearch').addEventListener('input', function(e) {
+            const query = e.target.value;
+            const patient = searchPatient(query);
+            displayPatientInfo(patient);
         });
 
         document.getElementById('treatmentForm').addEventListener('submit', function(e) {
