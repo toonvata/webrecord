@@ -6,24 +6,28 @@
     <title>ระบบบันทึกประวัติผู้ป่วยและการรักษา</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
     <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; }
         .container { max-width: 800px; margin: 0 auto; padding: 20px; }
         .tab { overflow: hidden; border: 1px solid #ccc; background-color: #f1f1f1; }
         .tab button { background-color: inherit; float: left; border: none; outline: none; cursor: pointer; padding: 14px 16px; transition: 0.3s; }
         .tab button:hover { background-color: #ddd; }
         .tab button.active { background-color: #ccc; }
-        .tabcontent { display: none; padding: 6px 12px; border: 1px solid #ccc; border-top: none; }
-        #canvas-container { width: 302px; height: 320px; position: relative; }
+        .tabcontent { display: none; padding: 20px; border: 1px solid #ccc; border-top: none; }
+        #canvas-container { width: 302px; height: 320px; position: relative; margin: 20px 0; }
         #bodyChart { position: absolute; top: 0; left: 0; }
-        #patientInfo, #selectedPatientInfo { font-size: 0.9em; border: 1px solid #ccc; padding: 10px; margin-top: 10px; }
+        #patientInfo, #selectedPatientInfo { font-size: 0.9em; border: 1px solid #ccc; padding: 15px; margin-top: 15px; background-color: #f9f9f9; }
         .patient-select { cursor: pointer; color: blue; text-decoration: underline; }
-        .vital-signs { display: flex; justify-content: space-between; margin-bottom: 10px; }
-        .vital-sign { width: 23%; }
-        .treatment-history { margin-top: 20px; }
-        .treatment-entry { border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; }
+        .vital-signs { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
+        .vital-sign { flex: 1 1 calc(25% - 10px); min-width: 150px; }
+        .treatment-history { margin-top: 30px; }
+        .treatment-entry { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; background-color: #fff; }
+        input[type="text"], input[type="date"], input[type="tel"], input[type="number"], textarea { width: 100%; padding: 8px; margin: 5px 0 15px; display: inline-block; border: 1px solid #ccc; box-sizing: border-box; }
+        button { background-color: #4CAF50; color: white; padding: 10px 15px; border: none; cursor: pointer; }
+        button:hover { opacity: 0.8; }
     </style>
 </head>
 <body>
-      <div class="container">
+    <div class="container">
         <h1>ระบบบันทึกประวัติผู้ป่วยและการรักษา</h1>
 
         <div class="tab">
@@ -35,28 +39,28 @@
             <h2>บันทึกข้อมูลผู้ป่วย</h2>
             <form id="patientForm">
                 <label for="hn">HN:</label>
-                <input type="text" id="hn" readonly><br><br>
+                <input type="text" id="hn" readonly>
 
                 <label for="name">ชื่อ-นามสกุล:</label>
-                <input type="text" id="name"><br><br>
+                <input type="text" id="name" required>
 
                 <label for="birthdate">วันเกิด:</label>
-                <input type="date" id="birthdate"><br><br>
+                <input type="date" id="birthdate" required>
 
                 <label for="occupation">อาชีพ:</label>
-                <input type="text" id="occupation"><br><br>
+                <input type="text" id="occupation">
 
                 <label for="address">ที่อยู่:</label>
-                <textarea id="address" rows="3"></textarea><br><br>
+                <textarea id="address" rows="3"></textarea>
 
                 <label for="phone">เบอร์โทรศัพท์:</label>
-                <input type="tel" id="phone"><br><br>
+                <input type="tel" id="phone">
 
                 <label for="conditions">โรคประจำตัว:</label>
-                <textarea id="conditions" rows="3"></textarea><br><br>
+                <textarea id="conditions" rows="3"></textarea>
 
                 <label for="allergies">ประวัติการแพ้ยา:</label>
-                <textarea id="allergies" rows="3"></textarea><br><br>
+                <textarea id="allergies" rows="3"></textarea>
 
                 <button type="submit">บันทึกข้อมูลผู้ป่วย</button>
             </form>
@@ -69,53 +73,53 @@
             <h2>บันทึกการรักษา</h2>
             <form id="treatmentForm">
                 <label for="patientSearch">ค้นหาผู้ป่วย (ชื่อ หรือ HN):</label>
-                <input type="text" id="patientSearch"><br><br>
+                <input type="text" id="patientSearch">
                 
                 <div id="patientInfo"></div>
                 <div id="selectedPatientInfo"></div>
 
                 <label for="treatmentDate">วันที่รักษา:</label>
-                <input type="date" id="treatmentDate"><br><br>
+                <input type="date" id="treatmentDate" required>
 
                 <div class="vital-signs">
                     <div class="vital-sign">
                         <label for="bloodPressure">ความดันโลหิต:</label>
-                        <input type="text" id="bloodPressure">
+                        <input type="text" id="bloodPressure" placeholder="เช่น 120/80">
                     </div>
                     <div class="vital-sign">
-                        <label for="pulse">ชีพจร:</label>
+                        <label for="pulse">ชีพจร (ครั้ง/นาที):</label>
                         <input type="number" id="pulse">
                     </div>
                     <div class="vital-sign">
-                        <label for="temperature">อุณหภูมิ:</label>
+                        <label for="temperature">อุณหภูมิ (°C):</label>
                         <input type="number" id="temperature" step="0.1">
                     </div>
                     <div class="vital-sign">
-                        <label for="respirationRate">อัตราการหายใจ:</label>
+                        <label for="respirationRate">อัตราการหายใจ (ครั้ง/นาที):</label>
                         <input type="number" id="respirationRate">
                     </div>
                 </div>
 
                 <label for="symptoms">อาการ:</label>
-                <textarea id="symptoms" rows="3"></textarea><br><br>
+                <textarea id="symptoms" rows="3" required></textarea>
 
                 <label for="diagnosis">การวินิจฉัย:</label>
-                <textarea id="diagnosis" rows="3"></textarea><br><br>
+                <textarea id="diagnosis" rows="3" required></textarea>
 
                 <label for="treatment">การรักษา:</label>
-                <textarea id="treatment" rows="3"></textarea><br><br>
+                <textarea id="treatment" rows="3" required></textarea>
 
                 <label for="medication">ยาที่ได้รับ:</label>
-                <textarea id="medication" rows="3"></textarea><br><br>
+                <textarea id="medication" rows="3"></textarea>
 
                 <label for="nextAppointment">วันนัดครั้งต่อไป:</label>
-                <input type="date" id="nextAppointment"><br><br>
+                <input type="date" id="nextAppointment">
 
                 <div id="canvas-container">
                     <img src="/api/placeholder/302/320" alt="Body Chart" id="bodyChartImage" />
                     <canvas id="bodyChart"></canvas>
                 </div>
-                <button type="button" onclick="clearCanvas()">ล้างรูปวาด</button><br><br>
+                <button type="button" onclick="clearCanvas()">ล้างรูปวาด</button>
 
                 <button type="submit">บันทึกการรักษา</button>
             </form>
@@ -132,50 +136,98 @@
         let selectedPatient = null;
         let treatments = [];
 
-        // Previous functions remain the same...
-
-        document.getElementById('treatmentForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            if (!selectedPatient) {
-                alert('กรุณาเลือกผู้ป่วยก่อนบันทึกการรักษา');
-                return;
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tabcontent");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
             }
-            
-            const treatmentDate = document.getElementById('treatmentDate').value;
-            const symptoms = document.getElementById('symptoms').value;
-            const diagnosis = document.getElementById('diagnosis').value;
-            const treatment = document.getElementById('treatment').value;
-            const medication = document.getElementById('medication').value;
-            const nextAppointment = document.getElementById('nextAppointment').value;
-            const bloodPressure = document.getElementById('bloodPressure').value;
-            const pulse = document.getElementById('pulse').value;
-            const temperature = document.getElementById('temperature').value;
-            const respirationRate = document.getElementById('respirationRate').value;
+            tablinks = document.getElementsByClassName("tablinks");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
 
-            const treatmentRecord = {
-                patientHN: selectedPatient.hn,
-                treatmentDate,
-                symptoms,
-                diagnosis,
-                treatment,
-                medication,
-                nextAppointment,
-                bloodPressure,
-                pulse,
-                temperature,
-                respirationRate
-            };
+            if (tabName === 'TreatmentRecord' && !canvas) {
+                initCanvas();
+            }
+        }
 
-            treatments.push(treatmentRecord);
-            displayTreatmentHistory(selectedPatient.hn);
+        function initCanvas() {
+            canvas = new fabric.Canvas('bodyChart', {
+                isDrawingMode: true,
+                width: 302,
+                height: 320
+            });
+            canvas.setBackgroundImage('/api/placeholder/302/320', canvas.renderAll.bind(canvas));
+            canvas.freeDrawingBrush.width = 2;
+            canvas.freeDrawingBrush.color = "#FF0000";
+        }
 
-            // Clear form
-            this.reset();
-            document.getElementById('selectedPatientInfo').innerHTML = '';
-            selectedPatient = null;
-            document.getElementById('patientSearch').value = '';
-            alert('บันทึกการรักษาเรียบร้อยแล้ว');
-        });
+        function clearCanvas() {
+            canvas.clear();
+            canvas.setBackgroundImage('/api/placeholder/302/320', canvas.renderAll.bind(canvas));
+        }
+
+        function generateHN() {
+            return String(currentHN++).padStart(5, '0');
+        }
+
+        function addPatient(patient) {
+            patients.push(patient);
+            updatePatientList();
+        }
+
+        function updatePatientList() {
+            const patientList = document.getElementById('patientList');
+            patientList.innerHTML = '';
+            patients.forEach(patient => {
+                const li = document.createElement('li');
+                li.textContent = `${patient.hn}: ${patient.name}`;
+                patientList.appendChild(li);
+            });
+        }
+
+        function searchPatient(query) {
+            return patients.filter(patient => 
+                patient.hn.toLowerCase().includes(query.toLowerCase()) || 
+                patient.name.toLowerCase().includes(query.toLowerCase())
+            );
+        }
+
+        function displayPatientInfo(matchedPatients) {
+            const patientInfo = document.getElementById('patientInfo');
+            if (matchedPatients.length > 0) {
+                patientInfo.innerHTML = matchedPatients.map(patient => `
+                    <div class="patient-select" onclick="selectPatient('${patient.hn}')">
+                        <p>HN: ${patient.hn} - ชื่อ-นามสกุล: ${patient.name}</p>
+                    </div>
+                `).join('');
+            } else {
+                patientInfo.innerHTML = '<p>ไม่พบข้อมูลผู้ป่วย</p>';
+            }
+        }
+
+        function selectPatient(hn) {
+            selectedPatient = patients.find(patient => patient.hn === hn);
+            if (selectedPatient) {
+                document.getElementById('patientSearch').value = `${selectedPatient.hn}: ${selectedPatient.name}`;
+                document.getElementById('patientInfo').innerHTML = '';
+                document.getElementById('selectedPatientInfo').innerHTML = `
+                    <h4>ข้อมูลผู้ป่วย</h4>
+                    <p><strong>HN:</strong> ${selectedPatient.hn}</p>
+                    <p><strong>ชื่อ-นามสกุล:</strong> ${selectedPatient.name}</p>
+                    <p><strong>วันเกิด:</strong> ${selectedPatient.birthdate}</p>
+                    <p><strong>อาชีพ:</strong> ${selectedPatient.occupation}</p>
+                    <p><strong>ที่อยู่:</strong> ${selectedPatient.address}</p>
+                    <p><strong>เบอร์โทรศัพท์:</strong> ${selectedPatient.phone}</p>
+                    <p><strong>โรคประจำตัว:</strong> ${selectedPatient.conditions}</p>
+                    <p><strong>ประวัติการแพ้ยา:</strong> ${selectedPatient.allergies}</p>
+                `;
+                displayTreatmentHistory(selectedPatient.hn);
+            }
+        }
 
         function displayTreatmentHistory(hn) {
             const treatmentHistory = document.getElementById('treatmentHistory');
@@ -184,7 +236,10 @@
                 treatmentHistory.innerHTML = patientTreatments.map(t => `
                     <div class="treatment-entry">
                         <h4>วันที่รักษา: ${t.treatmentDate}</h4>
-                        <p><strong>Vital Signs:</strong> ความดันโลหิต: ${t.bloodPressure}, ชีพจร: ${t.pulse}, อุณหภูมิ: ${t.temperature}, อัตราการหายใจ: ${t.respirationRate}</p>
+                        <p><strong>Vital Signs:</strong> ความดันโลหิต: ${t.bloodPressure}, 
+                           ชีพจร: ${t.pulse} ครั้ง/นาที, 
+                           อุณหภูมิ: ${t.temperature} °C, 
+                           อัตราการหายใจ: ${t.respirationRate} ครั้ง/นาที</p>
                         <p><strong>อาการ:</strong> ${t.symptoms}</p>
                         <p><strong>การวินิจฉัย:</strong> ${t.diagnosis}</p>
                         <p><strong>การรักษา:</strong> ${t.treatment}</p>
@@ -197,13 +252,119 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('hn').value = generateHN();
+       document.getElementById('patientForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const hn = generateHN();
+            const name = document.getElementById('name').value;
+            const birthdate = document.getElementById('birthdate').value;
+            const occupation = document.getElementById('occupation').value;
+            const address = document.getElementById('address').value;
+            const phone = document.getElementById('phone').value;
+            const conditions = document.getElementById('conditions').value;
+            const allergies = document.getElementById('allergies').value;
 
-            // Add sample patients
+            const patient = { hn, name, birthdate, occupation, address, phone, conditions, allergies };
+            addPatient(patient);
+
+            this.reset();
+            document.getElementById('hn').value = generateHN();
+            alert('บันทึกข้อมูลผู้ป่วยเรียบร้อยแล้ว');
+        });
+
+        document.getElementById('patientSearch').addEventListener('input', function(e) {
+            const query = e.target.value;
+            const matchedPatients = searchPatient(query);
+            displayPatientInfo(matchedPatients);
+        });
+
+        document.getElementById('treatmentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (!selectedPatient) {
+                alert('กรุณาเลือกผู้ป่วยก่อนบันทึกการรักษา');
+                return;
+            }
+            
+            const treatmentDate = document.getElementById('treatmentDate').value;
+            const bloodPressure = document.getElementById('bloodPressure').value;
+            const pulse = document.getElementById('pulse').value;
+            const temperature = document.getElementById('temperature').value;
+            const respirationRate = document.getElementById('respirationRate').value;
+            const symptoms = document.getElementById('symptoms').value;
+            const diagnosis = document.getElementById('diagnosis').value;
+            const treatment = document.getElementById('treatment').value;
+            const medication = document.getElementById('medication').value;
+            const nextAppointment = document.getElementById('nextAppointment').value;
+
+            const treatmentRecord = {
+                patientHN: selectedPatient.hn,
+                treatmentDate,
+                bloodPressure,
+                pulse,
+                temperature,
+                respirationRate,
+                symptoms,
+                diagnosis,
+                treatment,
+                medication,
+                nextAppointment,
+                bodyChart: canvas ? canvas.toDataURL() : null
+            };
+
+            treatments.push(treatmentRecord);
+            displayTreatmentHistory(selectedPatient.hn);
+
+            this.reset();
+            clearCanvas();
+            document.getElementById('selectedPatientInfo').innerHTML = '';
+            selectedPatient = null;
+            document.getElementById('patientSearch').value = '';
+            alert('บันทึกการรักษาเรียบร้อยแล้ว');
+        });
+
+        function addSampleData() {
             addPatient({ hn: generateHN(), name: "สมชาย ใจดี", birthdate: "1980-05-15", occupation: "วิศวกร", address: "123 ถ.สุขุมวิท กรุงเทพฯ", phone: "0812345678", conditions: "โรคภูมิแพ้", allergies: "ยาเพนนิซิลิน" });
             addPatient({ hn: generateHN(), name: "สมหญิง รักสวย", birthdate: "1992-11-30", occupation: "นักการตลาด", address: "456 ถ.พหลโยธิน กรุงเทพฯ", phone: "0898765432", conditions: "โรคหอบหืด", allergies: "ไม่มี" });
             addPatient({ hn: generateHN(), name: "สมศักดิ์ เก่งกาจ", birthdate: "1975-08-22", occupation: "ครู", address: "789 ถ.รัชดาภิเษก กรุงเทพฯ", phone: "0856789012", conditions: "โรคเบาหวาน", allergies: "ยาซัลฟา" });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('hn').value = generateHN();
+            addSampleData();
+            openTab({ currentTarget: document.querySelector('.tablinks') }, 'PatientInfo');
+        });
+
+        // เพิ่มฟังก์ชันสำหรับการบันทึกและโหลดข้อมูล (สมมติว่าใช้ Local Storage)
+        function saveData() {
+            localStorage.setItem('patients', JSON.stringify(patients));
+            localStorage.setItem('treatments', JSON.stringify(treatments));
+            localStorage.setItem('currentHN', currentHN);
+        }
+
+        function loadData() {
+            const savedPatients = localStorage.getItem('patients');
+            const savedTreatments = localStorage.getItem('treatments');
+            const savedCurrentHN = localStorage.getItem('currentHN');
+
+            if (savedPatients) patients = JSON.parse(savedPatients);
+            if (savedTreatments) treatments = JSON.parse(savedTreatments);
+            if (savedCurrentHN) currentHN = parseInt(savedCurrentHN);
+
+            updatePatientList();
+        }
+
+        // เรียกใช้ loadData เมื่อโหลดหน้าเว็บ
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+            document.getElementById('hn').value = generateHN();
+            if (patients.length === 0) addSampleData();
+            openTab({ currentTarget: document.querySelector('.tablinks') }, 'PatientInfo');
+        });
+
+        // บันทึกข้อมูลทุกครั้งที่มีการเปลี่ยนแปลง
+        ['patientForm', 'treatmentForm'].forEach(formId => {
+            document.getElementById(formId).addEventListener('submit', function() {
+                setTimeout(saveData, 0);
+            });
         });
     </script>
 </body>
