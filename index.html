@@ -96,8 +96,26 @@
             color: #28a745;
             margin-top: 0;
         }
-        #searchHN {
-            margin-bottom: 20px;
+.search-results {
+            position: absolute;
+            background-color: white;
+            border: 1px solid #ddd;
+            max-height: 200px;
+            overflow-y: auto;
+            width: 100%;
+            z-index: 1000;
+        }
+        .search-result-item {
+            padding: 10px;
+            cursor: pointer;
+        }
+        .search-result-item:hover {
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
         }
     </style>
 </head>
@@ -150,13 +168,12 @@
             </div>
         </div>
 
-        <div id="TreatmentRecord" class="tabcontent">
+         <div id="TreatmentRecord" class="tabcontent">
             <h2>บันทึกการรักษา</h2>
             <form id="treatmentForm">
-                <label for="patientSelect">เลือกผู้ป่วย:</label>
-                <select id="patientSelect">
-                    <option value="">-- เลือกผู้ป่วย --</option>
-                </select>
+                <label for="patientSearch">ค้นหาผู้ป่วย (ชื่อ หรือ HN):</label>
+                <input type="text" id="patientSearch" autocomplete="off">
+                <div id="searchResults" class="search-results"></div>
                 
                 <div id="selectedPatientInfo"></div>
                 
@@ -181,6 +198,8 @@
                 <button type="submit">บันทึกการรักษา</button>
             </form>
             
+           </form>
+            
             <div id="visitHistory">
                 <h3>ประวัติการรักษา</h3>
                 <div id="visitRecords"></div>
@@ -200,28 +219,29 @@
 
     <script>
         let patients = JSON.parse(localStorage.getItem('patients')) || [];
+        let currentHN = parseInt(localStorage.getItem('currentHN') || '0');
 
-        const patientSelect = document.getElementById('patientSelect');
         const visitRecords = document.getElementById('visitRecords');
         const patientsList = document.getElementById('patients');
         const selectedPatientInfo = document.getElementById('selectedPatientInfo');
+        const searchResults = document.getElementById('searchResults');
 
         function savePatients() {
             localStorage.setItem('patients', JSON.stringify(patients));
+            localStorage.setItem('currentHN', currentHN.toString());
+        }
+
+        function generateHN() {
+            currentHN++;
+            return 'HN' + currentHN.toString().padStart(6, '0');
         }
 
         function updatePatientList() {
             patientsList.innerHTML = '';
-            patientSelect.innerHTML = '<option value="">-- เลือกผู้ป่วย --</option>';
             patients.forEach(patient => {
                 const li = document.createElement('li');
                 li.textContent = `${patient.name} (HN: ${patient.hn})`;
                 patientsList.appendChild(li);
-
-                const option = document.createElement('option');
-                option.value = patient.hn;
-                option.textContent = `${patient.name} (HN: ${patient.hn})`;
-                patientSelect.appendChild(option);
             });
         }
 
@@ -231,7 +251,7 @@
             e.preventDefault();
             
             const newPatient = {
-                hn: document.getElementById('hn').value,
+                hn: generateHN(),
                 name: document.getElementById('patientName').value,
                 dateOfBirth: document.getElementById('dateOfBirth').value,
                 age: document.getElementById('age').value,
@@ -255,7 +275,7 @@
         document.getElementById('treatmentForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            const patientHN = patientSelect.value;
+            const patientHN = document.getElementById('patientSearch').getAttribute('data-hn');
             const visitDate = document.getElementById('visitDate').value;
             const symptoms = document.getElementById('symptoms').value;
             const diagnosis = document.getElementById('diagnosis').value;
@@ -280,36 +300,58 @@
             }
             
             this.reset();
+            document.getElementById('patientSearch').value = '';
+            document.getElementById('patientSearch').removeAttribute('data-hn');
+            selectedPatientInfo.innerHTML = '';
             
             console.log('บันทึกการรักษา:', newVisit);
         });
 
-        patientSelect.addEventListener('change', function() {
-            const patientHN = this.value;
-            if (patientHN) {
-                const patient = patients.find(p => p.hn === patientHN);
-                if (patient) {
-                    selectedPatientInfo.innerHTML = `
-                        <div class="patient-info">
-                            <h3>ข้อมูลผู้ป่วย</h3>
-                            <p><strong>HN:</strong> ${patient.hn}</p>
-                            <p><strong>ชื่อ-นามสกุล:</strong> ${patient.name}</p>
-                            <p><strong>วันเกิด:</strong> ${patient.dateOfBirth}</p>
-                            <p><strong>อายุ:</strong> ${patient.age}</p>
-                            <p><strong>อาชีพ:</strong> ${patient.occupation}</p>
-                            <p><strong>ที่อยู่:</strong> ${patient.address}</p>
-                            <p><strong>เบอร์โทรศัพท์:</strong> ${patient.phoneNumber}</p>
-                            <p><strong>โรคประจำตัว:</strong> ${patient.underlyingDisease}</p>
-                            <p><strong>ประวัติการแพ้ยา:</strong> ${patient.drugAllergy}</p>
-                        </div>
-                    `;
-                    updateVisitHistory(patient);
-                }
-            } else {
-                selectedPatientInfo.innerHTML = '';
-                visitRecords.innerHTML = '<p>กรุณาเลือกผู้ป่วย</p>';
-            }
+        document.getElementById('patientSearch').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const filteredPatients = patients.filter(patient => 
+                patient.name.toLowerCase().includes(searchTerm) || 
+                patient.hn.toLowerCase().includes(searchTerm)
+            );
+            
+            displaySearchResults(filteredPatients);
         });
+
+        function displaySearchResults(results) {
+            searchResults.innerHTML = '';
+            results.forEach(patient => {
+                const div = document.createElement('div');
+                div.className = 'search-result-item';
+                div.textContent = `${patient.name} (HN: ${patient.hn})`;
+                div.addEventListener('click', () => selectPatient(patient));
+                searchResults.appendChild(div);
+            });
+            
+            searchResults.style.display = results.length ? 'block' : 'none';
+        }
+
+        function selectPatient(patient) {
+            const patientSearch = document.getElementById('patientSearch');
+            patientSearch.value = `${patient.name} (HN: ${patient.hn})`;
+            patientSearch.setAttribute('data-hn', patient.hn);
+            searchResults.style.display = 'none';
+            
+            selectedPatientInfo.innerHTML = `
+                <div class="patient-info">
+                    <h3>ข้อมูลผู้ป่วย</h3>
+                    <p><strong>HN:</strong> ${patient.hn}</p>
+                    <p><strong>ชื่อ-นามสกุล:</strong> ${patient.name}</p>
+                    <p><strong>วันเกิด:</strong> ${patient.dateOfBirth}</p>
+                    <p><strong>อายุ:</strong> ${patient.age}</p>
+                    <p><strong>อาชีพ:</strong> ${patient.occupation}</p>
+                    <p><strong>ที่อยู่:</strong> ${patient.address}</p>
+                    <p><strong>เบอร์โทรศัพท์:</strong> ${patient.phoneNumber}</p>
+                    <p><strong>โรคประจำตัว:</strong> ${patient.underlyingDisease}</p>
+                    <p><strong>ประวัติการแพ้ยา:</strong> ${patient.drugAllergy}</p>
+                </div>
+            `;
+            updateVisitHistory(patient);
+        }
 
         function updateVisitHistory(patient) {
             visitRecords.innerHTML = '';
@@ -321,7 +363,7 @@
                         <h4>การรักษาครั้งที่ ${index + 1} - วันที่: ${visit.date}</h4>
                         <p><strong>อาการ:</strong> ${visit.symptoms}</p>
                         <p><strong>การวินิจฉัย:</strong> ${visit.diagnosis}</p>
-                        <button onclick="showFullVisitDetails(${patient.hn}, ${index})">ดูรายละเอียดเพิ่มเติม</button>
+                        <button onclick="showFullVisitDetails('${patient.hn}', ${index})">ดูรายละเอียดเพิ่มเติม</button>
                     `;
                     visitRecords.appendChild(visitRecord);
                 });
@@ -329,7 +371,8 @@
                 visitRecords.innerHTML = '<p>ไม่มีประวัติการรักษา</p>';
             }
         }
-  function showFullVisitDetails(hn, visitIndex) {
+
+        function showFullVisitDetails(hn, visitIndex) {
             const patient = patients.find(p => p.hn === hn);
             if (patient && patient.visits[visitIndex]) {
                 const visit = patient.visits[visitIndex];
@@ -391,7 +434,7 @@
         if (patients.length === 0) {
             patients = [
                 { 
-                    hn: "HN001", 
+                    hn: "HN000001", 
                     name: "สมชาย ใจดี", 
                     dateOfBirth: "1990-05-15", 
                     age: 34, 
@@ -428,9 +471,10 @@
                     ]
                 }
             ];
+            currentHN = 1;
             savePatients();
             updatePatientList();
         }
     </script>
 </body>
-</html>
+</html
