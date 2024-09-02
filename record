@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบบันทึกประวัติผู้ป่วยและการรักษา</title>
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1, h2, h3 {
+            color: #333;
+            text-align: center;
+        }
+        form, .patient-info {
+            display: grid;
+            gap: 10px;
+        }
+        label {
+            font-weight: bold;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #patientList, #visitHistory, #patientInfo {
+            margin-top: 20px;
+        }
+        .visit-record {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+        .tab {
+            overflow: hidden;
+            border: 1px solid #ccc;
+            background-color: #f1f1f1;
+        }
+        .tab button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 16px;
+            transition: 0.3s;
+        }
+        .tab button:hover {
+            background-color: #ddd;
+        }
+        .tab button.active {
+            background-color: #ccc;
+        }
+        .tabcontent {
+            display: none;
+            padding: 6px 12px;
+            border: 1px solid #ccc;
+            border-top: none;
+        }
+        .patient-info {
+            background-color: #e9f7ef;
+            border: 1px solid #28a745;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .patient-info h3 {
+            color: #28a745;
+            margin-top: 0;
+        }
+        #searchHN {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ระบบบันทึกประวัติผู้ป่วยและการรักษา</h1>
+        
+        <div class="tab">
+            <button class="tablinks" onclick="openTab(event, 'PatientInfo')" id="defaultOpen">ข้อมูลผู้ป่วย</button>
+            <button class="tablinks" onclick="openTab(event, 'TreatmentRecord')">บันทึกการรักษา</button>
+            <button class="tablinks" onclick="openTab(event, 'Search')">ค้นหาผู้ป่วย</button>
+        </div>
+
+        <div id="PatientInfo" class="tabcontent">
+            <h2>ข้อมูลผู้ป่วย</h2>
+            <form id="patientInfoForm">
+                <label for="hn">HN:</label>
+                <input type="text" id="hn" required>
+                
+                <label for="patientName">ชื่อ-นามสกุล:</label>
+                <input type="text" id="patientName" required>
+                
+                <label for="dateOfBirth">วันเดือนปีเกิด:</label>
+                <input type="date" id="dateOfBirth" required>
+                
+                <label for="age">อายุ:</label>
+                <input type="number" id="age" required>
+                
+                <label for="occupation">อาชีพ:</label>
+                <input type="text" id="occupation">
+                
+                <label for="address">ที่อยู่:</label>
+                <textarea id="address" rows="3"></textarea>
+                
+                <label for="phoneNumber">เบอร์โทรศัพท์:</label>
+                <input type="tel" id="phoneNumber">
+                
+                <label for="underlyingDisease">โรคประจำตัว:</label>
+                <textarea id="underlyingDisease" rows="2"></textarea>
+                
+                <label for="drugAllergy">ประวัติการแพ้ยา:</label>
+                <textarea id="drugAllergy" rows="2"></textarea>
+                
+                <button type="submit">บันทึกข้อมูลผู้ป่วย</button>
+            </form>
+            
+            <div id="patientList">
+                <h3>รายชื่อผู้ป่วย</h3>
+                <ul id="patients"></ul>
+            </div>
+        </div>
+
+        <div id="TreatmentRecord" class="tabcontent">
+            <h2>บันทึกการรักษา</h2>
+            <form id="treatmentForm">
+                <label for="patientSelect">เลือกผู้ป่วย:</label>
+                <select id="patientSelect">
+                    <option value="">-- เลือกผู้ป่วย --</option>
+                </select>
+                
+                <div id="selectedPatientInfo"></div>
+                
+                <label for="visitDate">วันที่รักษา:</label>
+                <input type="date" id="visitDate" required>
+                
+                <label for="symptoms">อาการ:</label>
+                <textarea id="symptoms" rows="3" required></textarea>
+                
+                <label for="diagnosis">การวินิจฉัย:</label>
+                <textarea id="diagnosis" rows="3" required></textarea>
+                
+                <label for="treatment">การรักษา:</label>
+                <textarea id="treatment" rows="3" required></textarea>
+                
+                <label for="medication">ยาที่ได้รับ:</label>
+                <input type="text" id="medication">
+                
+                <label for="nextAppointment">วันนัดครั้งต่อไป:</label>
+                <input type="date" id="nextAppointment">
+                
+                <button type="submit">บันทึกการรักษา</button>
+            </form>
+            
+            <div id="visitHistory">
+                <h3>ประวัติการรักษา</h3>
+                <div id="visitRecords"></div>
+            </div>
+        </div>
+
+        <div id="Search" class="tabcontent">
+            <h2>ค้นหาผู้ป่วย</h2>
+            <div id="searchHN">
+                <label for="searchHNInput">ค้นหาด้วย HN:</label>
+                <input type="text" id="searchHNInput">
+                <button onclick="searchPatient()">ค้นหา</button>
+            </div>
+            <div id="searchResult"></div>
+        </div>
+    </div>
+
+    <script>
+        let patients = JSON.parse(localStorage.getItem('patients')) || [];
+
+        const patientSelect = document.getElementById('patientSelect');
+        const visitRecords = document.getElementById('visitRecords');
+        const patientsList = document.getElementById('patients');
+        const selectedPatientInfo = document.getElementById('selectedPatientInfo');
+
+        function savePatients() {
+            localStorage.setItem('patients', JSON.stringify(patients));
+        }
+
+        function updatePatientList() {
+            patientsList.innerHTML = '';
+            patientSelect.innerHTML = '<option value="">-- เลือกผู้ป่วย --</option>';
+            patients.forEach(patient => {
+                const li = document.createElement('li');
+                li.textContent = `${patient.name} (HN: ${patient.hn})`;
+                patientsList.appendChild(li);
+
+                const option = document.createElement('option');
+                option.value = patient.hn;
+                option.textContent = `${patient.name} (HN: ${patient.hn})`;
+                patientSelect.appendChild(option);
+            });
+        }
+
+        updatePatientList();
+
+        document.getElementById('patientInfoForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const newPatient = {
+                hn: document.getElementById('hn').value,
+                name: document.getElementById('patientName').value,
+                dateOfBirth: document.getElementById('dateOfBirth').value,
+                age: document.getElementById('age').value,
+                occupation: document.getElementById('occupation').value,
+                address: document.getElementById('address').value,
+                phoneNumber: document.getElementById('phoneNumber').value,
+                underlyingDisease: document.getElementById('underlyingDisease').value,
+                drugAllergy: document.getElementById('drugAllergy').value,
+                visits: []
+            };
+            
+            patients.push(newPatient);
+            savePatients();
+            updatePatientList();
+            
+            this.reset();
+            
+            console.log('บันทึกข้อมูลผู้ป่วยใหม่:', newPatient);
+        });
+
+        document.getElementById('treatmentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const patientHN = patientSelect.value;
+            const visitDate = document.getElementById('visitDate').value;
+            const symptoms = document.getElementById('symptoms').value;
+            const diagnosis = document.getElementById('diagnosis').value;
+            const treatment = document.getElementById('treatment').value;
+            const medication = document.getElementById('medication').value;
+            const nextAppointment = document.getElementById('nextAppointment').value;
+            
+            const newVisit = {
+                date: visitDate,
+                symptoms: symptoms,
+                diagnosis: diagnosis,
+                treatment: treatment,
+                medication: medication,
+                nextAppointment: nextAppointment
+            };
+            
+            const patient = patients.find(p => p.hn === patientHN);
+            if (patient) {
+                patient.visits.unshift(newVisit);
+                savePatients();
+                updateVisitHistory(patient);
+            }
+            
+            this.reset();
+            
+            console.log('บันทึกการรักษา:', newVisit);
+        });
+
+        patientSelect.addEventListener('change', function() {
+            const patientHN = this.value;
+            if (patientHN) {
+                const patient = patients.find(p => p.hn === patientHN);
+                if (patient) {
+                    selectedPatientInfo.innerHTML = `
+                        <div class="patient-info">
+                            <h3>ข้อมูลผู้ป่วย</h3>
+                            <p><strong>HN:</strong> ${patient.hn}</p>
+                            <p><strong>ชื่อ-นามสกุล:</strong> ${patient.name}</p>
+                            <p><strong>วันเกิด:</strong> ${patient.dateOfBirth}</p>
+                            <p><strong>อายุ:</strong> ${patient.age}</p>
+                            <p><strong>อาชีพ:</strong> ${patient.occupation}</p>
+                            <p><strong>ที่อยู่:</strong> ${patient.address}</p>
+                            <p><strong>เบอร์โทรศัพท์:</strong> ${patient.phoneNumber}</p>
+                            <p><strong>โรคประจำตัว:</strong> ${patient.underlyingDisease}</p>
+                            <p><strong>ประวัติการแพ้ยา:</strong> ${patient.drugAllergy}</p>
+                        </div>
+                    `;
+                    updateVisitHistory(patient);
+                }
+            } else {
+                selectedPatientInfo.innerHTML = '';
+                visitRecords.innerHTML = '<p>กรุณาเลือกผู้ป่วย</p>';
+            }
+        });
+
+        function updateVisitHistory(patient) {
+            visitRecords.innerHTML = '';
+            if (patient.visits && patient.visits.length > 0) {
+                patient.visits.forEach((visit, index) => {
+                    const visitRecord = document.createElement('div');
+                    visitRecord.className = 'visit-record';
+                    visitRecord.innerHTML = `
+                        <h4>การรักษาครั้งที่ ${index + 1} - วันที่: ${visit.date}</h4>
+                        <p><strong>อาการ:</strong> ${visit.symptoms}</p>
+                        <p><strong>การวินิจฉัย:</strong> ${visit.diagnosis}</p>
+                        <button onclick="showFullVisitDetails(${patient.hn}, ${index})">ดูรายละเอียดเพิ่มเติม</button>
+                    `;
+                    visitRecords.appendChild(visitRecord);
+                });
+            } else {
+                visitRecords.innerHTML = '<p>ไม่มีประวัติการรักษา</p>';
+            }
+        }
+  function showFullVisitDetails(hn, visitIndex) {
+            const patient = patients.find(p => p.hn === hn);
+            if (patient && patient.visits[visitIndex]) {
+                const visit = patient.visits[visitIndex];
+                alert(`รายละเอียดการรักษา:
+                วันที่: ${visit.date}
+                อาการ: ${visit.symptoms}
+                การวินิจฉัย: ${visit.diagnosis}
+                การรักษา: ${visit.treatment}
+                ยาที่ได้รับ: ${visit.medication}
+                วันนัดครั้งต่อไป: ${visit.nextAppointment}`);
+            }
+        }
+
+        function searchPatient() {
+            const searchHN = document.getElementById('searchHNInput').value;
+            const searchResult = document.getElementById('searchResult');
+            const patient = patients.find(p => p.hn === searchHN);
+            
+            if (patient) {
+                searchResult.innerHTML = `
+                    <div class="patient-info">
+                        <h3>ข้อมูลผู้ป่วย</h3>
+                        <p><strong>HN:</strong> ${patient.hn}</p>
+                        <p><strong>ชื่อ-นามสกุล:</strong> ${patient.name}</p>
+                        <p><strong>วันเกิด:</strong> ${patient.dateOfBirth}</p>
+                        <p><strong>อายุ:</strong> ${patient.age}</p>
+                        <p><strong>อาชีพ:</strong> ${patient.occupation}</p>
+                        <p><strong>ที่อยู่:</strong> ${patient.address}</p>
+                        <p><strong>เบอร์โทรศัพท์:</strong> ${patient.phoneNumber}</p>
+                        <p><strong>โรคประจำตัว:</strong> ${patient.underlyingDisease}</p>
+                        <p><strong>ประวัติการแพ้ยา:</strong> ${patient.drugAllergy}</p>
+                    </div>
+                `;
+                updateVisitHistory(patient);
+            } else {
+                searchResult.innerHTML = '<p>ไม่พบข้อมูลผู้ป่วย</p>';
+                visitRecords.innerHTML = '';
+            }
+        }
+
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tabcontent");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("tablinks");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+
+        // เปิดแท็บ "ข้อมูลผู้ป่วย" เป็นค่าเริ่มต้น
+        document.getElementById("defaultOpen").click();
+
+        // โหลดข้อมูลตัวอย่างเมื่อเริ่มต้นใช้งาน (สำหรับการทดสอบ)
+        if (patients.length === 0) {
+            patients = [
+                { 
+                    hn: "HN001", 
+                    name: "สมชาย ใจดี", 
+                    dateOfBirth: "1990-05-15", 
+                    age: 34, 
+                    occupation: "วิศวกร", 
+                    address: "123 ถ.สุขุมวิท กรุงเทพฯ", 
+                    phoneNumber: "0812345678", 
+                    underlyingDisease: "ความดันโลหิตสูง", 
+                    drugAllergy: "ไม่มี",
+                    visits: [
+                        {
+                            date: "2024-05-01",
+                            symptoms: "ปวดหัว มีไข้",
+                            diagnosis: "ไข้หวัดใหญ่",
+                            treatment: "ให้ยาลดไข้และยาแก้ปวด",
+                            medication: "พาราเซตามอล, ไอบูโพรเฟน",
+                            nextAppointment: "2024-05-08"
+                        },
+                        {
+                            date: "2024-06-15",
+                            symptoms: "เวียนศีรษะ คลื่นไส้",
+                            diagnosis: "ความดันโลหิตสูง",
+                            treatment: "ปรับยาความดัน แนะนำการควบคุมอาหาร",
+                            medication: "ยาลดความดัน",
+                            nextAppointment: "2024-07-15"
+                        },
+                        {
+                            date: "2024-08-01",
+                            symptoms: "ปวดหลัง",
+                            diagnosis: "กล้ามเนื้อหลังอักเสบ",
+                            treatment: "ให้ยาแก้ปวด แนะนำการบริหารร่างกาย",
+                            medication: "ไดโคลฟีแนค",
+                            nextAppointment: "2024-08-15"
+                        }
+                    ]
+                }
+            ];
+            savePatients();
+            updatePatientList();
+        }
+    </script>
+</body>
+</html>
