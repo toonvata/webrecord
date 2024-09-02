@@ -15,6 +15,7 @@
         #canvas-container { width: 302px; height: 320px; position: relative; }
         #bodyChart { position: absolute; top: 0; left: 0; }
         #patientInfo { font-size: 0.8em; border: 1px solid #ccc; padding: 10px; margin-top: 10px; }
+        .patient-select { cursor: pointer; color: blue; text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -104,6 +105,7 @@
         let canvas;
         let currentHN = 1;
         let patients = [];
+        let selectedPatient = null;
 
         function openTab(evt, tabName) {
             var i, tabcontent, tablinks;
@@ -159,28 +161,38 @@
         }
 
         function searchPatient(query) {
-            return patients.find(patient => 
+            return patients.filter(patient => 
                 patient.hn.toLowerCase().includes(query.toLowerCase()) || 
                 patient.name.toLowerCase().includes(query.toLowerCase())
             );
         }
 
-        function displayPatientInfo(patient) {
+        function displayPatientInfo(matchedPatients) {
             const patientInfo = document.getElementById('patientInfo');
-            if (patient) {
-                patientInfo.innerHTML = `
-                    <h4>ข้อมูลผู้ป่วย</h4>
-                    <p>HN: ${patient.hn}</p>
-                    <p>ชื่อ-นามสกุล: ${patient.name}</p>
-                    <p>วันเกิด: ${patient.birthdate}</p>
-                    <p>อาชีพ: ${patient.occupation}</p>
-                    <p>ที่อยู่: ${patient.address}</p>
-                    <p>เบอร์โทรศัพท์: ${patient.phone}</p>
-                    <p>โรคประจำตัว: ${patient.conditions}</p>
-                    <p>ประวัติการแพ้ยา: ${patient.allergies}</p>
-                `;
+            if (matchedPatients.length > 0) {
+                patientInfo.innerHTML = matchedPatients.map(patient => `
+                    <div class="patient-select" onclick="selectPatient('${patient.hn}')">
+                        <h4>ข้อมูลผู้ป่วย</h4>
+                        <p>HN: ${patient.hn}</p>
+                        <p>ชื่อ-นามสกุล: ${patient.name}</p>
+                        <p>วันเกิด: ${patient.birthdate}</p>
+                        <p>อาชีพ: ${patient.occupation}</p>
+                        <p>ที่อยู่: ${patient.address}</p>
+                        <p>เบอร์โทรศัพท์: ${patient.phone}</p>
+                        <p>โรคประจำตัว: ${patient.conditions}</p>
+                        <p>ประวัติการแพ้ยา: ${patient.allergies}</p>
+                    </div>
+                `).join('<hr>');
             } else {
                 patientInfo.innerHTML = '<p>ไม่พบข้อมูลผู้ป่วย</p>';
+            }
+        }
+
+        function selectPatient(hn) {
+            selectedPatient = patients.find(patient => patient.hn === hn);
+            if (selectedPatient) {
+                document.getElementById('patientSearch').value = `${selectedPatient.hn}: ${selectedPatient.name}`;
+                document.getElementById('patientInfo').innerHTML = `<p>เลือกผู้ป่วย: ${selectedPatient.name} (HN: ${selectedPatient.hn})</p>`;
             }
         }
 
@@ -205,13 +217,43 @@
 
         document.getElementById('patientSearch').addEventListener('input', function(e) {
             const query = e.target.value;
-            const patient = searchPatient(query);
-            displayPatientInfo(patient);
+            const matchedPatients = searchPatient(query);
+            displayPatientInfo(matchedPatients);
         });
 
         document.getElementById('treatmentForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            // Add logic to save treatment data
+            if (!selectedPatient) {
+                alert('กรุณาเลือกผู้ป่วยก่อนบันทึกการรักษา');
+                return;
+            }
+            
+            const treatmentDate = document.getElementById('treatmentDate').value;
+            const symptoms = document.getElementById('symptoms').value;
+            const diagnosis = document.getElementById('diagnosis').value;
+            const treatment = document.getElementById('treatment').value;
+            const medication = document.getElementById('medication').value;
+            const nextAppointment = document.getElementById('nextAppointment').value;
+
+            const treatmentRecord = {
+                patientHN: selectedPatient.hn,
+                treatmentDate,
+                symptoms,
+                diagnosis,
+                treatment,
+                medication,
+                nextAppointment
+            };
+
+            // Here you would typically save the treatment record to a database
+            console.log('บันทึกการรักษา:', treatmentRecord);
+
+            // Clear form and reset selected patient
+            this.reset();
+            selectedPatient = null;
+            document.getElementById('patientSearch').value = '';
+            document.getElementById('patientInfo').innerHTML = '';
+            alert('บันทึกการรักษาเรียบร้อยแล้ว');
         });
 
         document.addEventListener('DOMContentLoaded', function() {
